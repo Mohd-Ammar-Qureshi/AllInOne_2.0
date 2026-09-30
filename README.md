@@ -1,4 +1,4 @@
-# AllInOne
+# AllInOne 2.0
 
 A full-stack **React Native application** for securely managing and organizing personal product information in one place.
 
