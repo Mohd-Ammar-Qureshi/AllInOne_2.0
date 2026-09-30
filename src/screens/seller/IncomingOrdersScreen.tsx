@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
 import orderService from '../../appwrite/orderService';
 import AppHeader from '../../components/ui/AppHeader';
+import SellerBottomNav from '../../components/navigation/SellerBottomNav';
 import EmptyState from '../../components/ui/EmptyState';
 import ErrorState from '../../components/ui/ErrorState';
 import OrderStatusPill from '../../components/ui/OrderStatusPill';
@@ -72,6 +73,7 @@ const IncomingOrdersScreen = ({ navigation }: Props) => {
 
   return (
     <SafeAreaView
+      edges={['top', 'left', 'right']}
       style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <AppHeader
@@ -148,11 +150,9 @@ const IncomingOrdersScreen = ({ navigation }: Props) => {
                 accessibilityRole="button"
                 accessibilityLabel={`Order ${item.$id
                   .slice(-6)
-                  .toUpperCase()} from ${item.buyerName}, ${item.itemCount} item${
-                  item.itemCount === 1 ? '' : 's'
-                }, ${formatPrice(item.totalAmount)}, ${
-                  ORDER_STATUS_LABELS[item.status]
-                }, placed ${formatShortDate(item.$createdAt)}`}
+                  .toUpperCase()} from ${item.buyerName}, ${item.itemCount} item${item.itemCount === 1 ? '' : 's'
+                  }, ${formatPrice(item.totalAmount)}, ${ORDER_STATUS_LABELS[item.status]
+                  }, placed ${formatShortDate(item.$createdAt)}`}
                 accessibilityHint="Opens order details"
                 onPress={() =>
                   navigation.navigate('SellerOrderDetail', {
@@ -193,6 +193,7 @@ const IncomingOrdersScreen = ({ navigation }: Props) => {
           />
         )}
       </View>
+      <SellerBottomNav active='IncomingOrders' />
     </SafeAreaView>
   );
 };

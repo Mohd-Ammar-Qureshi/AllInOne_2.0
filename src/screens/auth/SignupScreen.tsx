@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useKeyboardBackHandler } from '../../hooks/useKeyboardBackHandler';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
@@ -27,6 +28,7 @@ import { radius, spacing } from '../../theme';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
 
 const SignupScreen = ({ navigation }: Props) => {
+  useKeyboardBackHandler();
   const { colors } = useTheme();
   const { register } = useAppwrite();
 
@@ -106,7 +108,7 @@ const SignupScreen = ({ navigation }: Props) => {
       style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior='padding'>
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled">

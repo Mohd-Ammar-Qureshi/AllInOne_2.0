@@ -27,6 +27,8 @@ export type CreateProfileInput = {
   licenseVerified?: boolean;
 };
 
+// `licenseVerified` is deliberately not updatable from the app: only the
+// review-license Function (an admin) may mark an agency as verified.
 export type UpdateProfileInput = Partial<
-  Omit<CreateProfileInput, 'userId' | 'role'>
+  Omit<CreateProfileInput, 'userId' | 'role' | 'licenseVerified'>
 >;

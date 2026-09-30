@@ -20,6 +20,7 @@ import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
 import { MedicalStoreStackParamList } from '../../types/navigation';
 import { Product } from '../../types/product';
+import { getReadableTextColor } from '../../utils/color';
 import { formatPrice } from '../../utils/format';
 import { getErrorMessage } from '../../utils/errorHandler';
 import { radius, spacing } from '../../theme';
@@ -61,7 +62,7 @@ const SellerStoreScreen = ({ navigation, route }: Props) => {
       <View style={styles.content}>
         <AppHeader
           title={sellerName}
-          subtitle="Browse products"
+          subtitle="Sellers Store"
           onBack={() => navigation.goBack()}
           rightAction={
             <Pressable
@@ -79,7 +80,11 @@ const SellerStoreScreen = ({ navigation, route }: Props) => {
               />
               {cart.itemCount > 0 ? (
                 <View style={[styles.badge, { backgroundColor: colors.error }]}>
-                  <Text style={styles.badgeText}>{cart.itemCount}</Text>
+                  <Text
+                    style={[
+                      styles.viewCartText_notification,
+                    { color: getReadableTextColor(colors.primary)},
+                    ]}>{cart.itemCount}</Text>
                 </View>
               ) : null}
             </Pressable>
@@ -226,4 +231,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewCartText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  viewCartText_notification: {fontSize: 10, fontWeight: '700' },
 });

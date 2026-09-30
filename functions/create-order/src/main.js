@@ -1,5 +1,4 @@
-import { Client, TablesDB, ID, Permission, Query, Role } from 'node-appwrite';
-
+import { Client, TablesDB, Users, ID, Permission, Query, Role } from 'node-appwrite';
 /**
  * Secure server-side order creation for AllInOne.
  *
@@ -121,6 +120,23 @@ export default async ({ req, res, log, error }) => {
       throw new HttpError(400, 'Selected seller is not a verified agency.');
     }
 
+    // Optional hardening. A seller can edit their own profile row, so
+    // `licenseVerified` alone can be faked by a modified app. When this Function
+    // has REQUIRE_VERIFIED_LABEL=true it also requires the "verified_agency"
+    // label on the seller's account, which only the review-license Function
+    // (an admin) can set. Needs the users.read scope on the API key.
+    if (process.env.REQUIRE_VERIFIED_LABEL === 'true') {
+      let sellerUser;
+      try {
+        sellerUser = await new Users(client).get({ userId: sellerId });
+      } catch (labelErr) {
+        error(`Seller label check failed: ${labelErr.message ?? String(labelErr)}`);
+        throw new HttpError(500, 'Unable to verify the seller right now. Please try again.');
+      }
+      if (!(sellerUser.labels ?? []).includes('verified_agency')) {
+        throw new HttpError(400, 'Selected seller is not a verified agency.');
+      }
+    }
     // Re-fetch every product; verify it truly belongs to this seller.
     // Price/name/unit come from the database, never from the client.
     const items = [];
@@ -241,22 +257,22 @@ export default async ({ req, res, log, error }) => {
         createdItemIds.push(row.$id);
       }
     } catch (itemErr) {
-  error(`ORDER_ITEMS ERROR: ${JSON.stringify(itemErr)}`);
-  error(itemErr.message);
+      error(`ORDER_ITEMS ERROR: ${JSON.stringify(itemErr)}`);
+      error(itemErr.message);
 
-  await rollback(tables, {
-    databaseId,
-    ordersTableId,
-    orderItemsTableId,
-    orderId: createdOrderId,
-    itemIds: createdItemIds,
-  });
+      await rollback(tables, {
+        databaseId,
+        ordersTableId,
+        orderItemsTableId,
+        orderId: createdOrderId,
+        itemIds: createdItemIds,
+      });
 
-  throw new HttpError(
-    500,
-    'Unable to create your order items. No order was placed.',
-  );
-}
+      throw new HttpError(
+        500,
+        'Unable to create your order items. No order was placed.',
+      );
+    }
 
     // 10b. Best-effort "new order" notification for the seller. Created
     // here (API key) because a buyer's session cannot grant a permission to

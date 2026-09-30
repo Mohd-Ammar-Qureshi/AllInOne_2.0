@@ -4,6 +4,7 @@ import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../../components/ui/AppHeader';
+import CustomerBottomNav from '../../components/navigation/CustomerBottomNav';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
 import { CartItem, useCart } from '../../context/CartContext';
@@ -20,6 +21,7 @@ const CartScreen = ({ navigation }: Props) => {
 
   return (
     <SafeAreaView
+      edges={['top', 'left', 'right']}
       style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <AppHeader
@@ -47,104 +49,104 @@ const CartScreen = ({ navigation }: Props) => {
                 const willRemoveOnDecrement = item.quantity <= 1;
 
                 return (
-                <View
-                  style={[
-                    styles.card,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}>
-                  {item.imageUrl ? (
-                    <Image
-                      source={{ uri: item.imageUrl }}
-                      style={styles.image}
-                    />
-                  ) : (
-                    <View
-                      style={[
-                        styles.image,
-                        styles.imagePlaceholder,
-                        { backgroundColor: colors.surfaceSecondary },
-                      ]}>
-                      <MaterialIcons
-                        name="medication"
-                        size={22}
-                        color={colors.textSecondary}
+                  <View
+                    style={[
+                      styles.card,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                    ]}>
+                    {item.imageUrl ? (
+                      <Image
+                        source={{ uri: item.imageUrl }}
+                        style={styles.image}
                       />
-                    </View>
-                  )}
-                  <View style={styles.cardBody}>
-                    <Text
-                      style={[styles.name, { color: colors.text }]}
-                      numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={[styles.price, { color: colors.textSecondary }]}>
-                      {formatPrice(item.price)}
-                      {item.unit ? ` / ${item.unit}` : ''}
-                    </Text>
-                    <View style={styles.stepper}>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={
-                          willRemoveOnDecrement
-                            ? 'Remove item'
-                            : 'Decrease quantity'
-                        }
-                        onPress={() =>
-                          cart.updateQuantity(item.productId, item.quantity - 1)
-                        }
+                    ) : (
+                      <View
                         style={[
-                          styles.stepperButton,
+                          styles.image,
+                          styles.imagePlaceholder,
                           { backgroundColor: colors.surfaceSecondary },
                         ]}>
                         <MaterialIcons
-                          name={willRemoveOnDecrement ? 'delete-outline' : 'remove'}
-                          size={16}
-                          color={willRemoveOnDecrement ? colors.error : colors.text}
+                          name="medication"
+                          size={22}
+                          color={colors.textSecondary}
                         />
-                      </Pressable>
-                      <Text style={[styles.stepperValue, { color: colors.text }]}>
-                        {item.quantity}
-                      </Text>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Increase quantity"
-                        accessibilityState={{ disabled: atMaxStock }}
-                        disabled={atMaxStock}
-                        onPress={() =>
-                          cart.updateQuantity(item.productId, item.quantity + 1)
-                        }
-                        style={[
-                          styles.stepperButton,
-                          {
-                            backgroundColor: colors.surfaceSecondary,
-                            opacity: atMaxStock ? 0.4 : 1,
-                          },
-                        ]}>
-                        <MaterialIcons name="add" size={16} color={colors.text} />
-                      </Pressable>
-                    </View>
-                    {atMaxStock ? (
+                      </View>
+                    )}
+                    <View style={styles.cardBody}>
                       <Text
-                        style={[
-                          styles.maxStockHint,
-                          { color: colors.textSecondary },
-                        ]}>
-                        Only {item.stock} in stock
+                        style={[styles.name, { color: colors.text }]}
+                        numberOfLines={1}>
+                        {item.name}
                       </Text>
-                    ) : null}
+                      <Text style={[styles.price, { color: colors.textSecondary }]}>
+                        {formatPrice(item.price)}
+                        {item.unit ? ` / ${item.unit}` : ''}
+                      </Text>
+                      <View style={styles.stepper}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={
+                            willRemoveOnDecrement
+                              ? 'Remove item'
+                              : 'Decrease quantity'
+                          }
+                          onPress={() =>
+                            cart.updateQuantity(item.productId, item.quantity - 1)
+                          }
+                          style={[
+                            styles.stepperButton,
+                            { backgroundColor: colors.surfaceSecondary },
+                          ]}>
+                          <MaterialIcons
+                            name={willRemoveOnDecrement ? 'delete-outline' : 'remove'}
+                            size={16}
+                            color={willRemoveOnDecrement ? colors.error : colors.text}
+                          />
+                        </Pressable>
+                        <Text style={[styles.stepperValue, { color: colors.text }]}>
+                          {item.quantity}
+                        </Text>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Increase quantity"
+                          accessibilityState={{ disabled: atMaxStock }}
+                          disabled={atMaxStock}
+                          onPress={() =>
+                            cart.updateQuantity(item.productId, item.quantity + 1)
+                          }
+                          style={[
+                            styles.stepperButton,
+                            {
+                              backgroundColor: colors.surfaceSecondary,
+                              opacity: atMaxStock ? 0.4 : 1,
+                            },
+                          ]}>
+                          <MaterialIcons name="add" size={16} color={colors.text} />
+                        </Pressable>
+                      </View>
+                      {atMaxStock ? (
+                        <Text
+                          style={[
+                            styles.maxStockHint,
+                            { color: colors.textSecondary },
+                          ]}>
+                          Only {item.stock} in stock
+                        </Text>
+                      ) : null}
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove item"
+                      onPress={() => cart.removeItem(item.productId)}
+                      style={styles.removeButton}>
+                      <MaterialIcons
+                        name="delete-outline"
+                        size={20}
+                        color={colors.error}
+                      />
+                    </Pressable>
                   </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Remove item"
-                    onPress={() => cart.removeItem(item.productId)}
-                    style={styles.removeButton}>
-                    <MaterialIcons
-                      name="delete-outline"
-                      size={20}
-                      color={colors.error}
-                    />
-                  </Pressable>
-                </View>
                 );
               }}
             />
@@ -171,6 +173,7 @@ const CartScreen = ({ navigation }: Props) => {
           </>
         )}
       </View>
+      <CustomerBottomNav active="Cart" />
     </SafeAreaView>
   );
 };

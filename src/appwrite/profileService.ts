@@ -121,9 +121,6 @@ class ProfileService {
         ...(data.licenseNumber !== undefined
           ? { licenseNumber: data.licenseNumber || null }
           : {}),
-        ...(data.licenseVerified !== undefined
-          ? { licenseVerified: data.licenseVerified }
-          : {}),
       },
     });
 

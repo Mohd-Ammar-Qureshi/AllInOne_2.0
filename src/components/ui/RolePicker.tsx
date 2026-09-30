@@ -7,6 +7,7 @@ import {
   UserRole,
 } from '../../types/user';
 import { radius, spacing } from '../../theme';
+import { getReadableTextColor } from '../../utils/color';
 
 type RolePickerProps = {
   value: UserRole | null;
@@ -21,6 +22,7 @@ const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
 
 const RolePicker = ({ value, onChange, error }: RolePickerProps) => {
   const { colors } = useTheme();
+  const onPrimary = getReadableTextColor(colors.primary);
 
   return (
     <View style={styles.container}>
@@ -48,7 +50,7 @@ const RolePicker = ({ value, onChange, error }: RolePickerProps) => {
               <Text
                 style={[
                   styles.optionTitle,
-                  { color: selected ? '#FFFFFF' : colors.text },
+                  { color: selected ? onPrimary : colors.text },
                 ]}>
                 {USER_ROLE_LABELS[role]}
               </Text>
@@ -56,9 +58,7 @@ const RolePicker = ({ value, onChange, error }: RolePickerProps) => {
                 style={[
                   styles.optionDescription,
                   {
-                    color: selected
-                      ? 'rgba(255,255,255,0.9)'
-                      : colors.textSecondary,
+                    color: selected ? onPrimary : colors.textSecondary,
                   },
                 ]}>
                 {ROLE_DESCRIPTIONS[role]}

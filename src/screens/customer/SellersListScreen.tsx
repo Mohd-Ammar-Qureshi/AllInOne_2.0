@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import profileService from '../../appwrite/profileService';
 import AppHeader from '../../components/ui/AppHeader';
+import CustomerBottomNav from '../../components/navigation/CustomerBottomNav';
 import EmptyState from '../../components/ui/EmptyState';
 import ErrorState from '../../components/ui/ErrorState';
 import Loading from '../../components/Loading';
@@ -44,6 +45,7 @@ const SellersListScreen = ({ navigation }: Props) => {
 
   return (
     <SafeAreaView
+      edges={['top', 'left', 'right']}
       style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <AppHeader
@@ -113,7 +115,8 @@ const SellersListScreen = ({ navigation }: Props) => {
             )}
           />
         )}
-      </View>
+           </View>
+      <CustomerBottomNav active="Sellers" />
     </SafeAreaView>
   );
 };

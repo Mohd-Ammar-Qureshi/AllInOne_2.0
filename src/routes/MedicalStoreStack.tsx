@@ -29,12 +29,24 @@ export const MedicalStoreStack = () => {
       <Stack.Screen name="Home" component={MedicalStoreHomeScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsStack} />
-      <Stack.Screen name="Sellers" component={SellersListScreen} />
+      <Stack.Screen
+        name="Sellers"
+        component={SellersListScreen}
+        options={{ animation: 'fade' }}
+      />
       <Stack.Screen name="SellerStore" component={SellerStoreScreen} />
       <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-      <Stack.Screen name="Cart" component={CartScreen} />
+      <Stack.Screen
+        name="Cart"
+        component={CartScreen}
+        options={{ animation: 'fade' }}
+      />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
-      <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
+      <Stack.Screen
+        name="OrderHistory"
+        component={OrderHistoryScreen}
+        options={{ animation: 'fade' }}
+      />
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <Stack.Screen name="Notifications" component={BuyerNotificationsScreen} />
     </Stack.Navigator>

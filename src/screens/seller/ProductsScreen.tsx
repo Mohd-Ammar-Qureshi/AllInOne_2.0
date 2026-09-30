@@ -14,6 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
 import productService from '../../appwrite/productService';
 import AppHeader from '../../components/ui/AppHeader';
+import SellerBottomNav from '../../components/navigation/SellerBottomNav'
+import { getReadableTextColor } from '../../utils/color';
 import EmptyState from '../../components/ui/EmptyState';
 import ErrorState from '../../components/ui/ErrorState';
 import Input from '../../components/ui/Input';
@@ -162,8 +164,11 @@ const ProductsScreen = ({ navigation }: Props) => {
                     <Text
                       style={[
                         styles.filterChipText,
-                        { color: selected ? '#FFFFFF' : colors.text },
-                      ]}>
+                        {
+                          color: selected
+                            ? getReadableTextColor(colors.primary)
+                            : colors.text,
+                        },]}>
                       {label}
                     </Text>
                   </Pressable>
@@ -269,6 +274,7 @@ const ProductsScreen = ({ navigation }: Props) => {
           />
         )}
       </View>
+      <SellerBottomNav active='Products' />
     </SafeAreaView>
   );
 };

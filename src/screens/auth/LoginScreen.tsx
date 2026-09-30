@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useKeyboardBackHandler } from '../../hooks/useKeyboardBackHandler';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
@@ -15,6 +16,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useTheme } from '../../context/ThemeContext';
 import { AuthStackParamList } from '../../types/navigation';
+import { getReadableTextColor } from '../../utils/color';
 import { isValidEmail, isValidPassword } from '../../utils/validation';
 import {
   getErrorMessage,
@@ -26,9 +28,11 @@ import { radius, spacing } from '../../theme';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 const LoginScreen = ({ navigation }: Props) => {
+  useKeyboardBackHandler();
+
   const { colors } = useTheme();
   const { login } = useAppwrite();
-
+  const onPrimary = getReadableTextColor(colors.primary);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -73,17 +77,18 @@ const LoginScreen = ({ navigation }: Props) => {
       style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior='padding'>
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled">
           <View style={[styles.hero, { backgroundColor: colors.primary }]}>
-            <Text style={styles.heroTitle}>AllInOne</Text>
-            <Text style={styles.heroSubtitle}>
+            <Text style={[styles.heroTitle, { color: onPrimary }]}>
+              AllInOne
+            </Text>
+            <Text style={[styles.heroSubtitle, { color: onPrimary }]}>
               B2B medical marketplace for medical stores and medical agencies
             </Text>
           </View>
-
           <View
             style={[
               styles.card,
@@ -162,13 +167,11 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.xl,
   },
   heroTitle: {
-    color: '#FFFFFF',
     fontSize: 34,
     fontWeight: '800',
     marginBottom: spacing.sm,
   },
   heroSubtitle: {
-    color: 'rgba(255,255,255,0.85)',
     fontSize: 16,
     lineHeight: 22,
   },

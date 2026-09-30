@@ -11,8 +11,10 @@ import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../theme';
 
 type AppHeaderProps = {
-  title: string;
+  title?: string;
   subtitle?: string;
+  /** Optional brand mark shown before the title (e.g. the AllInOne logo). */
+  logo?: React.ReactNode;
   onBack?: () => void;
   rightAction?: React.ReactNode;
   style?: ViewStyle;
@@ -21,6 +23,7 @@ type AppHeaderProps = {
 const AppHeader = ({
   title,
   subtitle,
+  logo,
   onBack,
   rightAction,
   style,
@@ -44,14 +47,19 @@ const AppHeader = ({
             <MaterialIcons name="arrow-back" size={22} color={colors.text} />
           </Pressable>
         ) : null}
-        <View style={styles.textWrap}>
-          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-          {subtitle ? (
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              {subtitle}
-            </Text>
-          ) : null}
-        </View>
+        {logo}
+        {title || subtitle ? (
+          <View style={styles.textWrap}>
+            {title ? (
+              <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+            ) : null}
+            {subtitle ? (
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
       </View>
       {rightAction ? <View>{rightAction}</View> : null}
     </View>

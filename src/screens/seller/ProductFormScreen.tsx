@@ -70,6 +70,9 @@ const ProductFormScreen = ({ navigation, route }: Props) => {
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(
     null,
   );
+  const [imageSource, setImageSource] = useState<'gallery' | 'camera' | null>(
+    null,
+  );
   const [pickingImage, setPickingImage] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -126,6 +129,7 @@ const ProductFormScreen = ({ navigation, route }: Props) => {
 
   const handleChooseFromGallery = async () => {
     try {
+      setImageSource('gallery');
       setPickingImage(true);
       const result = await launchImageLibrary({
         mediaType: 'photo',
@@ -146,11 +150,14 @@ const ProductFormScreen = ({ navigation, route }: Props) => {
       applyPickedAsset(result.assets?.[0]);
     } finally {
       setPickingImage(false);
+      setImageSource(null);
+
     }
   };
 
   const handleTakePhoto = async () => {
     try {
+      setImageSource('camera');
       setPickingImage(true);
       const result = await launchCamera({
         mediaType: 'photo',
@@ -173,6 +180,7 @@ const ProductFormScreen = ({ navigation, route }: Props) => {
       applyPickedAsset(result.assets?.[0]);
     } finally {
       setPickingImage(false);
+      setImageSource(null);
     }
   };
 
@@ -308,7 +316,7 @@ const ProductFormScreen = ({ navigation, route }: Props) => {
       style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior="padding">
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}>
@@ -344,15 +352,16 @@ const ProductFormScreen = ({ navigation, route }: Props) => {
                 title="Choose from Gallery"
                 variant="secondary"
                 onPress={handleChooseFromGallery}
-                loading={imageBusy}
+                loading={imageSource === 'gallery'}
                 disabled={imageBusy}
                 style={styles.flex1}
               />
+
               <Button
                 title="Take Photo"
                 variant="secondary"
                 onPress={handleTakePhoto}
-                loading={imageBusy}
+                loading={imageSource === 'camera'}
                 disabled={imageBusy}
                 style={styles.flex1}
               />

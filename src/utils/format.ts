@@ -1,7 +1,8 @@
+/** Every price in the app is shown in Indian rupees, e.g. ₹1,25,000.00. */
 export const formatPrice = (price: number): string =>
-  new Intl.NumberFormat('en-US', {
+  new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
   }).format(price);
 
 export const formatStatusLabel = (status: string): string =>

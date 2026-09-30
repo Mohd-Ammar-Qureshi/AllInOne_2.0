@@ -25,6 +25,7 @@ import {
   SettingsItem,
 } from '../../settings/settingsConfig';
 import { ThemePreference, spacing } from '../../theme';
+import { getLicenseStatus } from '../../utils/license';
 import {
   AgencyStackParamList,
   SettingsStackParamList,
@@ -41,10 +42,10 @@ const APPEARANCE_OPTIONS: {
   label: string;
   icon: IconName;
 }[] = [
-  { value: 'light', label: 'Light', icon: 'light-mode' },
-  { value: 'dark', label: 'Dark', icon: 'dark-mode' },
-  { value: 'system', label: 'System', icon: 'brightness-auto' },
-];
+    { value: 'light', label: 'Light', icon: 'light-mode' },
+    { value: 'dark', label: 'Dark', icon: 'dark-mode' },
+    { value: 'system', label: 'System', icon: 'brightness-auto' },
+  ];
 
 const SettingsScreen = ({ navigation }: Props) => {
   const { colors, preference, setPreference } = useTheme();
@@ -63,7 +64,12 @@ const SettingsScreen = ({ navigation }: Props) => {
 
   const getSubtitle = (item: SettingsItem): string | undefined => {
     if (item.kind === 'appLink' && item.id === 'licence') {
-      return profile?.licenseVerified ? 'Verified' : 'Not verified yet';
+      const licence = getLicenseStatus(profile);
+      return licence === 'verified'
+        ? 'Verified'
+        : licence === 'pending'
+          ? 'Under review'
+          : 'Not verified yet';
     }
     if (item.kind === 'link' && item.id === 'account' && role) {
       return ACCOUNT_TYPE_LABELS[role];
@@ -152,10 +158,11 @@ const SettingsScreen = ({ navigation }: Props) => {
       : []),
     ...(role === 'agency'
       ? [
-          profile?.licenseVerified
-            ? { label: 'Licence verified', tone: 'success' as const }
-            : { label: 'Licence pending', tone: 'warning' as const },
-        ]
+        getLicenseStatus(profile) === 'verified'
+          ? { label: 'Licence verified', tone: 'success' as const }
+          : getLicenseStatus(profile) === 'pending'
+            ? { label: 'Licence under review', tone: 'warning' as const }
+            : { label: 'Licence needed', tone: 'warning' as const },]
       : []),
   ];
 

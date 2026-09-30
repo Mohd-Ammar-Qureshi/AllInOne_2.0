@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
@@ -19,8 +19,10 @@ import { AgencyStackParamList } from '../../types/navigation';
 import {
   getErrorMessage,
   showErrorSnackbar,
+  showInfoSnackbar,
   showSuccessSnackbar,
 } from '../../utils/errorHandler';
+import { getLicenseStatus, getRejectionReason } from '../../utils/license';
 import { isValidLicenseNumber } from '../../utils/validation';
 import { radius, spacing } from '../../theme';
 
@@ -30,26 +32,57 @@ type Props = NativeStackScreenProps<
 >;
 
 /**
- * One-time agency licence verification.
+ * Agency licence verification.
  *
- * Triggered the first time an agency tries to add/sell a product and
- * profile.licenseVerified is not yet true. Writes licenseNumber +
- * licenseVerified onto the existing `profiles` row — no new table needed.
- * Once verified, this screen is never shown again for that agency.
+ * The agency submits its drug/trade licence number once. It is saved on the
+ * existing `profiles` row and stays "under review" until an admin approves it
+ * (the review-license Function). The app can no longer verify an agency
+ * itself. The screen re-checks the latest profile whenever it opens, so an
+ * approval shows up without logging in again.
  */
 const LicenseVerificationScreen = ({ navigation }: Props) => {
   const { colors } = useTheme();
-  const { profile, updateProfile } = useAppwrite();
+  const { profile, user, updateProfile, refreshProfile, getCurrentUser, setUser } =
+    useAppwrite();
+
+  const status = getLicenseStatus(profile);
+  const rejectionReason = status === 'none' ? getRejectionReason(user) : null;
 
   const [licenseNumber, setLicenseNumber] = useState(
     profile?.licenseNumber ?? '',
   );
+  const [editing, setEditing] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(false);
 
-  const alreadyVerified = Boolean(profile?.licenseVerified);
+  const reload = useCallback(async () => {
+    const [latestUser] = await Promise.all([getCurrentUser(), refreshProfile()]);
+    if (latestUser) {
+      setUser(latestUser);
+    }
+  }, [getCurrentUser, refreshProfile, setUser]);
 
-  const handleVerify = async () => {
+  // Pick up an approval/rejection made while the app was open.
+  useFocusEffect(
+    useCallback(() => {
+      reload().catch(() => undefined);
+    }, [reload]),
+  );
+
+  const handleCheckStatus = async () => {
+    try {
+      setChecking(true);
+      await reload();
+      showInfoSnackbar('Status updated.');
+    } catch (err) {
+      showErrorSnackbar(err, "Couldn't check your status. Try again.");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     setError('');
 
     const trimmed = licenseNumber.trim();
@@ -66,14 +99,11 @@ const LicenseVerificationScreen = ({ navigation }: Props) => {
 
     try {
       setLoading(true);
-      await updateProfile({
-        licenseNumber: trimmed,
-        licenseVerified: true,
-      });
-      showSuccessSnackbar('Licence verified. You can now add products.');
-      navigation.goBack();
+      await updateProfile({ licenseNumber: trimmed });
+      setEditing(false);
+      showSuccessSnackbar('Licence submitted for review.');
     } catch (err) {
-      const message = getErrorMessage(err, 'Unable to verify licence.');
+      const message = getErrorMessage(err, "Couldn't submit your licence.");
       setError(message);
       showErrorSnackbar(message);
     } finally {
@@ -81,12 +111,14 @@ const LicenseVerificationScreen = ({ navigation }: Props) => {
     }
   };
 
+  const showForm = status === 'none' || editing;
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior="padding">
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}>
@@ -107,29 +139,65 @@ const LicenseVerificationScreen = ({ navigation }: Props) => {
                   styles.iconWrap,
                   { backgroundColor: colors.surfaceSecondary },
                 ]}>
-                <MaterialIcons name="badge" size={32} color={colors.primary} />
+                <MaterialIcons
+                  name={
+                    status === 'verified'
+                      ? 'verified'
+                      : status === 'pending'
+                        ? 'hourglass-top'
+                        : 'badge'
+                  }
+                  size={32}
+                  color={colors.primary}
+                />
               </View>
 
-              {alreadyVerified ? (
+              {status === 'verified' ? (
                 <>
                   <Text style={[styles.title, { color: colors.text }]}>
-                    Licence already verified
+                    Licence verified
                   </Text>
                   <Text style={[styles.body, { color: colors.textSecondary }]}>
-                    Your drug/trade licence is on file. You won't be asked
+                    Your drug/trade licence is approved. You won't be asked
                     for this again.
                   </Text>
-                  <Button title="Back" variant="secondary" onPress={() => navigation.goBack()} />
+                  <Button
+                    title="Back"
+                    variant="secondary"
+                    onPress={() => navigation.goBack()}
+                  />
                 </>
-              ) : (
+              ) : showForm ? (
                 <>
+                  {rejectionReason !== null ? (
+                    <View
+                      accessibilityRole="alert"
+                      style={[
+                        styles.notice,
+                        {
+                          backgroundColor: colors.surfaceSecondary,
+                          borderColor: colors.error,
+                        },
+                      ]}>
+                      <Text style={[styles.noticeTitle, { color: colors.error }]}>
+                        Your last licence wasn't approved
+                      </Text>
+                      <Text style={[styles.noticeBody, { color: colors.text }]}>
+                        {rejectionReason ||
+                          'Please check the number and submit it again.'}
+                      </Text>
+                    </View>
+                  ) : null}
+
                   <Text style={[styles.title, { color: colors.text }]}>
-                    Before you sell your first product
+                    {status === 'pending'
+                      ? 'Change your licence number'
+                      : 'Before you sell your first product'}
                   </Text>
                   <Text style={[styles.body, { color: colors.textSecondary }]}>
-                    We verify every agency's drug/trade licence once. This
-                    protects medical stores buying on the marketplace. You
-                    won't need to do this again for future products.
+                    We check every agency's drug/trade licence once. This
+                    protects medical stores buying on the marketplace. Once
+                    it's approved you won't need to do this again.
                   </Text>
 
                   <Input
@@ -150,9 +218,57 @@ const LicenseVerificationScreen = ({ navigation }: Props) => {
                   ) : null}
 
                   <Button
-                    title="Verify & Continue"
-                    onPress={handleVerify}
+                    title="Submit for Review"
+                    onPress={handleSubmit}
                     loading={loading}
+                  />
+                  {status === 'pending' ? (
+                    <Button
+                      title="Cancel"
+                      variant="secondary"
+                      onPress={() => {
+                        setEditing(false);
+                        setLicenseNumber(profile?.licenseNumber ?? '');
+                        setError('');
+                      }}
+                      style={styles.secondaryAction}
+                    />
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.title, { color: colors.text }]}>
+                    Licence under review
+                  </Text>
+                  <Text style={[styles.body, { color: colors.textSecondary }]}>
+                    We're checking your licence number. You can add products as
+                    soon as it's approved.
+                  </Text>
+
+                  <View
+                    style={[
+                      styles.numberRow,
+                      { backgroundColor: colors.surfaceSecondary },
+                    ]}>
+                    <Text
+                      style={[styles.numberLabel, { color: colors.textSecondary }]}>
+                      Submitted licence number
+                    </Text>
+                    <Text style={[styles.numberValue, { color: colors.text }]}>
+                      {profile?.licenseNumber}
+                    </Text>
+                  </View>
+
+                  <Button
+                    title="Check Status"
+                    onPress={handleCheckStatus}
+                    loading={checking}
+                  />
+                  <Button
+                    title="Change Licence Number"
+                    variant="secondary"
+                    onPress={() => setEditing(true)}
+                    style={styles.secondaryAction}
                   />
                 </>
               )}
@@ -199,4 +315,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: spacing.md,
   },
+  notice: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  noticeTitle: { fontSize: 15, fontWeight: '800' },
+  noticeBody: { fontSize: 14, lineHeight: 20 },
+  numberRow: {
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: 2,
+  },
+  numberLabel: { fontSize: 12, fontWeight: '600' },
+  numberValue: { fontSize: 16, fontWeight: '700' },
+  secondaryAction: { marginTop: spacing.md },
 });

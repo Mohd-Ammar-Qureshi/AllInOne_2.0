@@ -1,0 +1,20 @@
+{
+    "projectId": "6a0b268c00231e6a7b91",
+    "endpoint": "https://fra.cloud.appwrite.io/v1",
+    "functions": [
+        {
+            "$id": "review-license",
+            "name": "review-license",
+            "runtime": "node-22.0",
+            "execute": [],
+            "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "enabled": true,
+            "logging": true,
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "path": "functions/review-license"
+        }
+    ]
+}

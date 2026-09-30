@@ -31,9 +31,17 @@ export const AgencyStack = () => {
         name="LicenseVerification"
         component={LicenseVerificationScreen}
       />
-      <Stack.Screen name="Products" component={ProductsScreen} />
+      <Stack.Screen
+        name="Products"
+        component={ProductsScreen}
+        options={{ animation: 'fade' }}
+      />
       <Stack.Screen name="ProductForm" component={ProductFormScreen} />
-      <Stack.Screen name="IncomingOrders" component={IncomingOrdersScreen} />
+      <Stack.Screen
+        name="IncomingOrders"
+        component={IncomingOrdersScreen}
+        options={{ animation: 'fade' }}
+      />
       <Stack.Screen
         name="SellerOrderDetail"
         component={SellerOrderDetailScreen}
