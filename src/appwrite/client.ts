@@ -18,3 +18,10 @@ export const APPWRITE_CREATE_ORDER_FUNCTION_ID = Config.APPWRITE_CREATE_ORDER_FU
 export const APPWRITE_UPDATE_ORDER_STATUS_FUNCTION_ID =
   Config.APPWRITE_UPDATE_ORDER_STATUS_FUNCTION_ID ?? 'update-order-status';
 export const APPWRITE_PRODUCT_IMAGES_BUCKET_ID = Config.APPWRITE_PRODUCT_IMAGES_BUCKET_ID!;
+
+/**
+ * Where the Appwrite verification email links to. Must be reachable by Appwrite's
+ * redirect validation (see README / docs/verify-email.html) and must open this
+ * app via the deep link registered in AndroidManifest / Info.plist.
+ */
+export const APPWRITE_VERIFICATION_URL = Config.APPWRITE_VERIFICATION_URL ?? '';

@@ -94,6 +94,7 @@ const CartScreen = ({ navigation }: Props) => {
                           onPress={() =>
                             cart.updateQuantity(item.productId, item.quantity - 1)
                           }
+                          hitSlop={6}
                           style={[
                             styles.stepperButton,
                             { backgroundColor: colors.surfaceSecondary },
@@ -112,6 +113,7 @@ const CartScreen = ({ navigation }: Props) => {
                           accessibilityLabel="Increase quantity"
                           accessibilityState={{ disabled: atMaxStock }}
                           disabled={atMaxStock}
+                          hitSlop={6}
                           onPress={() =>
                             cart.updateQuantity(item.productId, item.quantity + 1)
                           }
@@ -135,17 +137,23 @@ const CartScreen = ({ navigation }: Props) => {
                         </Text>
                       ) : null}
                     </View>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Remove item"
-                      onPress={() => cart.removeItem(item.productId)}
-                      style={styles.removeButton}>
-                      <MaterialIcons
-                        name="delete-outline"
-                        size={20}
-                        color={colors.error}
-                      />
-                    </Pressable>
+                    <View style={styles.rightColumn}>
+                      <Text style={[styles.lineTotal, { color: colors.text }]}>
+                        {formatPrice(item.price * item.quantity)}
+                      </Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Remove item"
+                        hitSlop={8}
+                        onPress={() => cart.removeItem(item.productId)}
+                        style={styles.removeButton}>
+                        <MaterialIcons
+                          name="delete-outline"
+                          size={20}
+                          color={colors.error}
+                        />
+                      </Pressable>
+                    </View>
                   </View>
                 );
               }}
@@ -158,7 +166,8 @@ const CartScreen = ({ navigation }: Props) => {
               ]}>
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
-                  Subtotal
+                  Subtotal · {cart.items.length} product
+                  {cart.items.length === 1 ? '' : 's'}
                 </Text>
                 <Text style={[styles.summaryValue, { color: colors.text }]}>
                   {formatPrice(cart.subtotal)}
@@ -199,14 +208,16 @@ const styles = StyleSheet.create({
   price: { fontSize: 12 },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 4 },
   stepperButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepperValue: { fontSize: 14, fontWeight: '700', minWidth: 20, textAlign: 'center' },
   maxStockHint: { fontSize: 11, marginTop: 2 },
+  rightColumn: { alignItems: 'flex-end', justifyContent: 'space-between', alignSelf: 'stretch' },
+  lineTotal: { fontSize: 14, fontWeight: '800' },
   removeButton: { padding: spacing.xs },
   summary: {
     borderWidth: 1,

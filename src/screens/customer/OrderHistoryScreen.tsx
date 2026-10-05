@@ -24,6 +24,7 @@ import { MedicalStoreStackParamList } from '../../types/navigation';
 import {
   Order,
   ORDER_STATUSES,
+  getOrderStatusLabel,
   ORDER_STATUS_LABELS,
   OrderStatus,
 } from '../../types/order';
@@ -153,7 +154,7 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
                 accessibilityLabel={`Order ${item.$id
                   .slice(-6)
                   .toUpperCase()} with ${item.sellerName}, ${item.itemCount} item${item.itemCount === 1 ? '' : 's'
-                  }, ${formatPrice(item.totalAmount)}, ${ORDER_STATUS_LABELS[item.status]
+                  }, ${formatPrice(item.totalAmount)}, ${getOrderStatusLabel(item)
                   }, placed ${formatShortDate(item.$createdAt)}`}
                 accessibilityHint="Opens order details"
                 onPress={() =>
@@ -180,7 +181,11 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
                     {formatPrice(item.totalAmount)}
                   </Text>
                 </View>
-                <OrderStatusPill status={item.status} />
+                <OrderStatusPill
+                  status={item.status}
+                  customerDeliveryAccepted={item.customerDeliveryAccepted}
+                  sellerDeliveryConfirmed={item.sellerDeliveryConfirmed}
+                />
                 <MaterialIcons
                   name="chevron-right"
                   size={22}

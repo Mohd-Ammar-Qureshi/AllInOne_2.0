@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,6 +10,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAppwrite } from '../../appwrite/AppwriteContext';
 import authService from '../../appwrite/authService';
 import AppHeader from '../../components/ui/AppHeader';
 import Button from '../../components/ui/Button';
@@ -21,12 +23,19 @@ import {
   showErrorSnackbar,
   showSuccessSnackbar,
 } from '../../utils/errorHandler';
-import { isValidPassword } from '../../utils/validation';
+import { getAuthErrorMessage } from '../../utils/authErrors';
+import { isValidEmail, isValidPassword } from '../../utils/validation';
 
 type Props = NativeStackScreenProps<SettingsStackParamList, 'Security'>;
 
 const SecurityScreen = ({ navigation }: Props) => {
   const { colors } = useTheme();
+  const { user, changeEmail } = useAppwrite();
+
+  const [newEmail, setNewEmail] = useState('');
+  const [emailPassword, setEmailPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [changingEmail, setChangingEmail] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -61,6 +70,25 @@ const SecurityScreen = ({ navigation }: Props) => {
       return;
     }
 
+    // Inputs are valid: ask before doing anything. Cancel changes nothing and
+    // leaves the form as it is.
+    Alert.alert(
+      'Change password?',
+      'Your password will be changed. You will stay signed in on this device. Do you want to continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Change Password', onPress: performPasswordChange },
+      ],
+    );
+  };
+
+  // The existing password-change logic, unchanged; it now runs only after the
+  // user confirms.
+  const performPasswordChange = async () => {
+    if (saving) {
+      return;
+    }
+
     try {
       setSaving(true);
       await authService.updatePassword(newPassword, currentPassword);
@@ -74,6 +102,52 @@ const SecurityScreen = ({ navigation }: Props) => {
       showErrorSnackbar(message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangeEmail = async () => {
+    if (changingEmail) {
+      return;
+    }
+
+    setEmailError('');
+
+    if (!isValidEmail(newEmail)) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+
+    if (newEmail.trim().toLowerCase() === user?.email?.toLowerCase()) {
+      setEmailError('That is already your email address.');
+      return;
+    }
+
+    if (!emailPassword) {
+      setEmailError('Enter your current password');
+      return;
+    }
+
+    try {
+      setChangingEmail(true);
+      const { verificationSent, sendError } = await changeEmail(
+        newEmail,
+        emailPassword,
+      );
+      // Appwrite has now switched the account to the new, unverified address,
+      // so the app moves to the verification screen by itself.
+      if (verificationSent) {
+        showSuccessSnackbar('Verification email sent to your new email address.');
+      } else {
+        showErrorSnackbar(
+          sendError ?? 'We could not send the verification email. Please try again.',
+        );
+      }
+    } catch (err) {
+      const message = getAuthErrorMessage(err, 'emailChange');
+      setEmailError(message);
+      showErrorSnackbar(message);
+    } finally {
+      setChangingEmail(false);
     }
   };
 
@@ -155,6 +229,59 @@ const SecurityScreen = ({ navigation }: Props) => {
                 loading={saving}
               />
             </View>
+
+            <View
+              style={[
+                styles.card,
+                styles.cardSpacing,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}>
+              <Text style={[styles.title, { color: colors.text }]}>
+                Change email
+              </Text>
+              <Text style={[styles.body, { color: colors.textSecondary }]}>
+                Current email: {user?.email}. The new address replaces it on
+                your account right away, and you will need to verify it before
+                you can keep using the app.
+              </Text>
+
+              <Input
+                label="New email"
+                value={newEmail}
+                onChangeText={text => {
+                  setNewEmail(text);
+                  setEmailError('');
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!changingEmail}
+              />
+              <Input
+                label="Current password"
+                value={emailPassword}
+                onChangeText={text => {
+                  setEmailPassword(text);
+                  setEmailError('');
+                }}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!changingEmail}
+              />
+
+              {emailError ? (
+                <Text style={[styles.error, { color: colors.error }]}>
+                  {emailError}
+                </Text>
+              ) : null}
+
+              <Button
+                title="Change email & send verification"
+                onPress={handleChangeEmail}
+                loading={changingEmail}
+              />
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -174,6 +301,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
+  cardSpacing: { marginTop: spacing.lg },
   title: {
     fontSize: 18,
     fontWeight: '800',

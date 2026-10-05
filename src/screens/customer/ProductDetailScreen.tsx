@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -15,22 +14,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import productService from '../../appwrite/productService';
 import Button from '../../components/ui/Button';
 import AppHeader from '../../components/ui/AppHeader';
+import CartButton from '../../components/ui/CartButton';
 import ErrorState from '../../components/ui/ErrorState';
 import Loading from '../../components/Loading';
-import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useAddToCart } from '../../hooks/useAddToCart';
 import { MedicalStoreStackParamList } from '../../types/navigation';
 import { Product } from '../../types/product';
 import { formatPrice } from '../../utils/format';
-import { getErrorMessage, showSuccessSnackbar } from '../../utils/errorHandler';
+import { getErrorMessage } from '../../utils/errorHandler';
+import { getStockStatus } from '../../utils/stock';
 import { radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<MedicalStoreStackParamList, 'ProductDetail'>;
 
 const ProductDetailScreen = ({ navigation, route }: Props) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { productId, sellerId, sellerName } = route.params;
-  const cart = useCart();
+  const addProduct = useAddToCart({ sellerId, sellerName });
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,54 +57,6 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
     }, [load]),
   );
 
-  const addToCart = (item: Product) => {
-    const result = cart.addItem(
-      { sellerId, sellerName },
-      {
-        productId: item.$id,
-        name: item.name,
-        price: item.price,
-        unit: item.unit,
-        imageUrl: item.imageUrl,
-        stock: item.stock,
-      },
-      quantity,
-    );
-
-    if (result === 'added') {
-      showSuccessSnackbar('Added to cart');
-      return;
-    }
-
-    // One cart = one seller = one order: confirm before wiping the cart.
-    Alert.alert(
-      'Start a new cart?',
-      `Your cart has items from ${cart.sellerName}. You can only order from one seller at a time. Clear the cart and add this item instead?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear & Add',
-          style: 'destructive',
-          onPress: () => {
-            cart.replaceCartWithItem(
-              { sellerId, sellerName },
-              {
-                productId: item.$id,
-                name: item.name,
-                price: item.price,
-                unit: item.unit,
-                imageUrl: item.imageUrl,
-                stock: item.stock,
-              },
-              quantity,
-            );
-            showSuccessSnackbar('Cart updated');
-          },
-        },
-      ],
-    );
-  };
-
   if (loading) {
     return <Loading message="Loading product..." />;
   }
@@ -112,14 +65,29 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
     return <ErrorState message={error || 'Product not found.'} onRetry={load} />;
   }
 
-  const outOfStock = product.status === 'out_of_stock' || product.stock <= 0;
+  const stockStatus = getStockStatus(product.stock, product.status);
+  const outOfStock = stockStatus.tone === 'out';
+  const stockColor =
+    stockStatus.tone === 'out'
+      ? colors.error
+      : stockStatus.tone === 'low'
+        ? isDark
+          ? colors.warning
+          : '#92400E'
+        : isDark
+          ? colors.success
+          : '#166534';
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <AppHeader title="Product" onBack={() => navigation.goBack()} />
+          <AppHeader
+            title="Product"
+            onBack={() => navigation.goBack()}
+            rightAction={<CartButton onPress={() => navigation.navigate('Cart')} />}
+          />
 
           {product.imageUrl ? (
             <Image source={{ uri: product.imageUrl }} style={styles.image} />
@@ -148,12 +116,8 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
             {formatPrice(product.price)}
             {product.unit ? ` / ${product.unit}` : ''}
           </Text>
-          <Text
-            style={[
-              styles.stock,
-              { color: outOfStock ? colors.error : colors.success },
-            ]}>
-            {outOfStock ? 'Out of stock' : `${product.stock} in stock`}
+          <Text style={[styles.stock, { color: stockColor }]}>
+            {stockStatus.label}
           </Text>
 
           {product.description ? (
@@ -170,6 +134,7 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
               <View style={styles.stepper}>
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel="Decrease quantity"
                   onPress={() => setQuantity(q => Math.max(1, q - 1))}
                   style={[
                     styles.stepperButton,
@@ -182,6 +147,7 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
                 </Text>
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel="Increase quantity"
                   onPress={() =>
                     setQuantity(q => Math.min(product.stock, q + 1))
                   }
@@ -197,7 +163,7 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
 
           <Button
             title={outOfStock ? 'Out of Stock' : 'Add to Cart'}
-            onPress={() => addToCart(product)}
+            onPress={() => addProduct(product, quantity)}
             disabled={outOfStock}
             style={styles.addButton}
           />
@@ -238,9 +204,9 @@ const styles = StyleSheet.create({
   stepperLabel: { fontSize: 15, fontWeight: '700' },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   stepperButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },

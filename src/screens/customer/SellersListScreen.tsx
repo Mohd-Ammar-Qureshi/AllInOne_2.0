@@ -19,7 +19,8 @@ import { radius, spacing } from '../../theme';
 type Props = NativeStackScreenProps<MedicalStoreStackParamList, 'Sellers'>;
 
 const SellersListScreen = ({ navigation }: Props) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const verifiedColor = isDark ? colors.success : '#166534';
   const [sellers, setSellers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -98,13 +99,34 @@ const SellersListScreen = ({ navigation }: Props) => {
                   />
                 </View>
                 <View style={styles.cardBody}>
-                  <Text style={[styles.name, { color: colors.text }]}>
+                  <Text
+                    style={[styles.name, { color: colors.text }]}
+                    numberOfLines={1}>
                     {item.name}
                   </Text>
-                  <Text style={[styles.meta, { color: colors.textSecondary }]}>
-                    {[item.city, item.state].filter(Boolean).join(', ') ||
-                      'Location not provided'}
-                  </Text>
+                  <View style={styles.badgeRow}>
+                    <MaterialIcons
+                      name="verified"
+                      size={14}
+                      color={verifiedColor}
+                    />
+                    <Text style={[styles.badgeText, { color: verifiedColor }]}>
+                      Verified agency
+                    </Text>
+                  </View>
+                  <View style={styles.badgeRow}>
+                    <MaterialIcons
+                      name="place"
+                      size={14}
+                      color={colors.textSecondary}
+                    />
+                    <Text
+                      style={[styles.meta, { color: colors.textSecondary }]}
+                      numberOfLines={1}>
+                      {[item.city, item.state].filter(Boolean).join(', ') ||
+                        'Location not provided'}
+                    </Text>
+                  </View>
                 </View>
                 <MaterialIcons
                   name="chevron-right"
@@ -142,7 +164,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardBody: { flex: 1, gap: 4 },
+  cardBody: { flex: 1, gap: 2 },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  badgeText: { fontSize: 12, fontWeight: '700' },
   name: { fontSize: 16, fontWeight: '700' },
   meta: { fontSize: 13 },
 });

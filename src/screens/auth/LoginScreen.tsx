@@ -59,7 +59,7 @@ const LoginScreen = ({ navigation }: Props) => {
     try {
       setLoading(true);
       await login(email.trim(), password);
-      showSuccessSnackbar('Welcome back!');
+      showSuccessSnackbar('Login successful');
     } catch (err) {
       const message = getErrorMessage(
         err,

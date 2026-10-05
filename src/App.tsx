@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { CartProvider } from './context/CartContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import ToastHost from './components/ui/ToastHost';
 import { Router } from './routes/Router';
 import { store } from './redux/store';
 
@@ -28,6 +29,7 @@ const App = () => {
             <CartProvider>
               <ThemedStatusBar />
               <Router />
+              <ToastHost />
             </CartProvider>
           </SettingsProvider>
         </ThemeProvider>

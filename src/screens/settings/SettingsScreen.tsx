@@ -138,7 +138,7 @@ const SettingsScreen = ({ navigation }: Props) => {
             setLoggingOut(true);
             const success = await logout();
             if (success) {
-              showSuccessSnackbar('Logged out successfully');
+              showSuccessSnackbar('Logout successful');
             } else {
               showErrorSnackbar('Unable to log out. Please try again.');
               setLoggingOut(false);

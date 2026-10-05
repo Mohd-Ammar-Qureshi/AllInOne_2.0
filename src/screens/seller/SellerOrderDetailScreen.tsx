@@ -3,7 +3,10 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import orderService from '../../appwrite/orderService';
+import { useAppwrite } from '../../appwrite/AppwriteContext';
+import orderService, { isStaleOrderError } from '../../appwrite/orderService';
+import DeliveryConfirmationCard from '../../components/orders/DeliveryConfirmationCard';
+import OrderProgress from '../../components/orders/OrderProgress';
 import AppHeader from '../../components/ui/AppHeader';
 import Button from '../../components/ui/Button';
 import ErrorState from '../../components/ui/ErrorState';
@@ -11,6 +14,7 @@ import Loading from '../../components/Loading';
 import { useTheme } from '../../context/ThemeContext';
 import { AgencyStackParamList } from '../../types/navigation';
 import {
+  getOrderStatusLabel,
   NEXT_SELLER_STATUSES,
   Order,
   OrderItem,
@@ -36,8 +40,15 @@ const ACTION_LABELS: Record<OrderStatus, string> = {
   cancelled: 'Cancel Order',
 };
 
+const TRANSITION_TOASTS: Partial<Record<OrderStatus, string>> = {
+  accepted: 'Order accepted',
+  rejected: 'Order rejected',
+  shipped: 'Order shipped',
+};
+
 const SellerOrderDetailScreen = ({ navigation, route }: Props) => {
   const { colors } = useTheme();
+  const { user } = useAppwrite();
   const { orderId } = route.params;
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -68,6 +79,30 @@ const SellerOrderDetailScreen = ({ navigation, route }: Props) => {
     }, [load]),
   );
 
+  const refreshQuietly = useCallback(async () => {
+    try {
+      setOrder(await orderService.getOrder(orderId));
+    } catch {
+      // keep what is on screen
+    }
+  }, [orderId]);
+
+  const handleConfirmDelivered = async () => {
+    if (!order || order.sellerDeliveryConfirmed) {
+      return;
+    }
+    try {
+      // The screen is updated only from the server's response.
+      setOrder(await orderService.confirmDelivered(order.$id));
+      showSuccessSnackbar('Order confirmed as delivered');
+    } catch (err) {
+      if (isStaleOrderError(err)) {
+        refreshQuietly();
+      }
+      throw err; // the button shows the message
+    }
+  };
+
   const handleTransition = (nextStatus: OrderStatus) => {
     if (!order) {
       return;
@@ -87,7 +122,10 @@ const SellerOrderDetailScreen = ({ navigation, route }: Props) => {
                 nextStatus,
               );
               setOrder(updated);
-              showSuccessSnackbar(`Order marked as ${ORDER_STATUS_LABELS[nextStatus]}`);
+              showSuccessSnackbar(
+                TRANSITION_TOASTS[nextStatus] ??
+                  `Order marked as ${ORDER_STATUS_LABELS[nextStatus]}`,
+              );
             } catch (err) {
               showErrorSnackbar(err, 'Unable to update order status.');
               // The order may have changed (e.g. the buyer cancelled).
@@ -110,6 +148,7 @@ const SellerOrderDetailScreen = ({ navigation, route }: Props) => {
   }
 
   const nextActions = NEXT_SELLER_STATUSES[order.status] ?? [];
+  const viewerRole = user?.$id === order.sellerId ? 'seller' : null;
 
   return (
     <SafeAreaView
@@ -118,9 +157,11 @@ const SellerOrderDetailScreen = ({ navigation, route }: Props) => {
         <View style={styles.content}>
           <AppHeader
             title={`Order #${order.$id.slice(-6).toUpperCase()}`}
-            subtitle={ORDER_STATUS_LABELS[order.status]}
+            subtitle={getOrderStatusLabel(order)}
             onBack={() => navigation.goBack()}
           />
+
+          <OrderProgress status={order.status} />
 
           <View
             style={[
@@ -181,6 +222,13 @@ const SellerOrderDetailScreen = ({ navigation, route }: Props) => {
               </Text>
             </View>
           </View>
+
+          <DeliveryConfirmationCard
+            order={order}
+            viewerRole={viewerRole}
+            onAcceptDelivery={async () => undefined}
+            onConfirmDelivered={handleConfirmDelivered}
+          />
 
           {nextActions.length > 0 ? (
             <View style={styles.actions}>

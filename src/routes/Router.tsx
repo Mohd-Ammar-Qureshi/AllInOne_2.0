@@ -8,13 +8,15 @@ import { AppwriteProvider, useAppwrite } from '../appwrite/AppwriteContext';
 import profileService from '../appwrite/profileService';
 import Loading from '../components/Loading';
 import { useTheme } from '../context/ThemeContext';
+import { useVerificationLifecycle } from '../hooks/useVerificationLifecycle';
 import { AuthStack } from './AuthStack';
+import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
 import { RoleRouter } from './RoleRouter';
 
 const AppNavigator = () => {
   const { colors, isDark } = useTheme();
   const {
-    isLoggedIn,
+    authStage,
     setIsLoggedIn,
     setUser,
     setProfile,
@@ -22,6 +24,8 @@ const AppNavigator = () => {
     logout,
   } = useAppwrite();
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+
+  useVerificationLifecycle(!isBootstrapping);
 
   const bootstrapAuth = useCallback(async () => {
     try {
@@ -86,9 +90,15 @@ const AppNavigator = () => {
     return <Loading message="Starting AllInOne..." />;
   }
 
+  // Signed in but the email is not verified: the main app is never mounted.
+  // (Plain screen, not a navigator: there is no route history to go back into.)
+  if (authStage === 'email_verification') {
+    return <EmailVerificationScreen />;
+  }
+
   return (
     <NavigationContainer theme={navigationTheme}>
-      {isLoggedIn ? <RoleRouter /> : <AuthStack />}
+      {authStage === 'unauthenticated' ? <AuthStack /> : <RoleRouter />}
     </NavigationContainer>
   );
 };

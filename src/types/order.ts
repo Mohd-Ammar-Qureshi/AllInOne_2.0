@@ -42,7 +42,53 @@ export type Order = Models.Row & {
   phone: string;
   notes?: string | null;
   deliverySnapshot?: string;
+  /** Set by the customer after the seller marks the order shipped. */
+  customerDeliveryAccepted?: boolean | null;
+  /** Set by the seller after the customer has accepted delivery. */
+  sellerDeliveryConfirmed?: boolean | null;
 };
+
+type DeliveryFields = Pick<
+  Order,
+  'status' | 'customerDeliveryAccepted' | 'sellerDeliveryConfirmed'
+>;
+
+/**
+ * Where an order is in the two-sided delivery confirmation.
+ * - not_shipped: nothing to confirm yet (pending / accepted)
+ * - awaiting_customer: shipped, the customer has not accepted yet
+ * - awaiting_seller: customer accepted, the seller has not confirmed yet
+ * - completed: delivered (both confirmed)
+ * - closed: cancelled or rejected; no delivery actions
+ */
+export type DeliveryStage =
+  | 'not_shipped'
+  | 'awaiting_customer'
+  | 'awaiting_seller'
+  | 'completed'
+  | 'closed';
+
+export const getDeliveryStage = (order: DeliveryFields): DeliveryStage => {
+  switch (order.status) {
+    case 'delivered':
+      return 'completed';
+    case 'cancelled':
+    case 'rejected':
+      return 'closed';
+    case 'shipped':
+      return order.customerDeliveryAccepted
+        ? 'awaiting_seller'
+        : 'awaiting_customer';
+    default:
+      return 'not_shipped';
+  }
+};
+
+/** 'Shipped' becomes 'Delivery Accepted' once the customer has accepted. */
+export const getOrderStatusLabel = (order: DeliveryFields): string =>
+  order.status === 'shipped' && order.customerDeliveryAccepted
+    ? 'Delivery Accepted'
+    : ORDER_STATUS_LABELS[order.status];
 
 /** A line item snapshot of a product at the time of order. Table: order_items. */
 export type OrderItem = Models.Row & {
@@ -81,7 +127,8 @@ export type CreateOrderInput = {
 export const NEXT_SELLER_STATUSES: Partial<Record<OrderStatus, OrderStatus[]>> = {
   pending: ['accepted', 'rejected'],
   accepted: ['shipped'],
-  shipped: ['delivered'],
+  // No shipped -> delivered here: delivery is completed only through the
+  // two-sided confirmation (customer accepts, then seller confirms).
 };
 
 /** Buyer-side actions allowed from a given order status. */

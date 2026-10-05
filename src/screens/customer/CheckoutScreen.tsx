@@ -83,7 +83,7 @@ const CheckoutScreen = ({ navigation }: Props) => {
       });
 
       cart.clearCart();
-      showSuccessSnackbar('Order placed successfully');
+      showSuccessSnackbar('Order created successfully');
       navigation.replace('OrderDetail', { orderId: order.$id });
     } catch (err) {
       showErrorSnackbar(err, getErrorMessage(err, 'Unable to place order.'));

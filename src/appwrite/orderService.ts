@@ -8,10 +8,28 @@ import {
   appwriteClient,
 } from './client';
 import { CreateOrderInput, Order, OrderItem, OrderStatus } from '../types/order';
+import { isNetworkError } from '../utils/authErrors';
+
+/** A failed delivery action. `status` is the Function's HTTP status (0 = offline). */
+export class OrderActionError extends Error {
+  status: number;
+
+  constructor(message: string, status = 0) {
+    super(message);
+    this.name = 'OrderActionError';
+    this.status = status;
+  }
+}
+
+/** The order changed under the user (or is gone): reload it from Appwrite. */
+export const isStaleOrderError = (error: unknown): boolean =>
+  error instanceof OrderActionError &&
+  (error.status === 409 || error.status === 404);
 
 class OrderService {
   private tables: TablesDB;
   private functions: Functions;
+  private pendingDeliveryActions = new Set<string>();
 
   constructor() {
     this.tables = new TablesDB(appwriteClient);
@@ -157,6 +175,80 @@ class OrderService {
     }
 
     return parsed.order;
+  }
+
+  /**
+   * Runs a delivery action on the `update-order-status` Function. Who may do
+   * what, and in which order status, is decided there (server-side); this
+   * client only prevents duplicate in-flight requests and maps errors.
+   */
+  private async runDeliveryAction(
+    orderId: string,
+    action: 'acceptDelivery' | 'confirmDelivered',
+    fallbackMessage: string,
+  ): Promise<Order> {
+    const key = `${action}:${orderId}`;
+    if (this.pendingDeliveryActions.has(key)) {
+      throw new OrderActionError('Please wait, your request is in progress.');
+    }
+    this.pendingDeliveryActions.add(key);
+
+    try {
+      let execution;
+      try {
+        execution = await this.functions.createExecution({
+          functionId: APPWRITE_UPDATE_ORDER_STATUS_FUNCTION_ID,
+          body: JSON.stringify({ orderId, action }),
+          method: ExecutionMethod.POST,
+        });
+      } catch (err) {
+        throw new OrderActionError(
+          isNetworkError(err)
+            ? 'No internet connection. Check your network and try again.'
+            : fallbackMessage,
+        );
+      }
+
+      let parsed: { order?: Order; error?: string } = {};
+      try {
+        parsed = execution.responseBody
+          ? JSON.parse(execution.responseBody)
+          : {};
+      } catch {
+        throw new OrderActionError(fallbackMessage, execution.responseStatusCode);
+      }
+
+      if (execution.responseStatusCode >= 400 || !parsed.order) {
+        throw new OrderActionError(
+          parsed.error ?? fallbackMessage,
+          execution.responseStatusCode,
+        );
+      }
+      return parsed.order;
+    } finally {
+      this.pendingDeliveryActions.delete(key);
+    }
+  }
+
+  /** Buyer only, order must be shipped. Sets customerDeliveryAccepted. */
+  async acceptDelivery(orderId: string): Promise<Order> {
+    return this.runDeliveryAction(
+      orderId,
+      'acceptDelivery',
+      'Unable to accept delivery. Please try again.',
+    );
+  }
+
+  /**
+   * Seller only, after the customer accepted. Sets sellerDeliveryConfirmed and
+   * the server moves the order to `delivered`.
+   */
+  async confirmDelivered(orderId: string): Promise<Order> {
+    return this.runDeliveryAction(
+      orderId,
+      'confirmDelivered',
+      'Unable to confirm delivery. Please try again.',
+    );
   }
 }
 

@@ -1,9 +1,13 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import orderService from '../../appwrite/orderService';
+import { useAppwrite } from '../../appwrite/AppwriteContext';
+import orderService, { isStaleOrderError } from '../../appwrite/orderService';
+import DeliveryConfirmationCard from '../../components/orders/DeliveryConfirmationCard';
+import OrderProgress from '../../components/orders/OrderProgress';
 import AppHeader from '../../components/ui/AppHeader';
 import Button from '../../components/ui/Button';
 import ErrorState from '../../components/ui/ErrorState';
@@ -12,9 +16,9 @@ import { useTheme } from '../../context/ThemeContext';
 import { MedicalStoreStackParamList } from '../../types/navigation';
 import {
   NEXT_BUYER_STATUSES,
+  getOrderStatusLabel,
   Order,
   OrderItem,
-  ORDER_STATUS_LABELS,
 } from '../../types/order';
 import { formatPrice } from '../../utils/format';
 import {
@@ -28,6 +32,7 @@ type Props = NativeStackScreenProps<MedicalStoreStackParamList, 'OrderDetail'>;
 
 const OrderDetailScreen = ({ navigation, route }: Props) => {
   const { colors } = useTheme();
+  const { user } = useAppwrite();
   const { orderId } = route.params;
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -57,6 +62,31 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
       load();
     }, [load]),
   );
+
+  // Re-read the order without disturbing the screen if that fails too.
+  const refreshQuietly = useCallback(async () => {
+    try {
+      setOrder(await orderService.getOrder(orderId));
+    } catch {
+      // keep what is on screen
+    }
+  }, [orderId]);
+
+  const handleAcceptDelivery = async () => {
+    if (!order || order.customerDeliveryAccepted) {
+      return;
+    }
+    try {
+      // The screen is updated only from the server's response.
+      setOrder(await orderService.acceptDelivery(order.$id));
+      showSuccessSnackbar('Delivery confirmed as received');
+    } catch (err) {
+      if (isStaleOrderError(err)) {
+        refreshQuietly();
+      }
+      throw err; // the button shows the message
+    }
+  };
 
   const handleCancel = () => {
     if (!order) {
@@ -99,6 +129,7 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
   const canCancel = (NEXT_BUYER_STATUSES[order.status] ?? []).includes(
     'cancelled',
   );
+  const viewerRole = user?.$id === order.buyerId ? 'buyer' : null;
 
   return (
     <SafeAreaView
@@ -107,18 +138,42 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
         <View style={styles.content}>
           <AppHeader
             title={`Order #${order.$id.slice(-6).toUpperCase()}`}
-            subtitle={ORDER_STATUS_LABELS[order.status]}
+            subtitle={getOrderStatusLabel(order)}
             onBack={() => navigation.goBack()}
           />
+
+          <OrderProgress status={order.status} />
 
           <View
             style={[
               styles.card,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Seller
-            </Text>
+            <View style={styles.cardTitleRow}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Seller
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Visit ${order.sellerName} store`}
+                hitSlop={8}
+                onPress={() =>
+                  navigation.navigate('SellerStore', {
+                    sellerId: order.sellerId,
+                    sellerName: order.sellerName,
+                  })
+                }
+                style={styles.linkButton}>
+                <MaterialIcons
+                  name="storefront"
+                  size={16}
+                  color={colors.primary}
+                />
+                <Text style={[styles.linkText, { color: colors.primary }]}>
+                  Visit store
+                </Text>
+              </Pressable>
+            </View>
             <Text style={[styles.body, { color: colors.textSecondary }]}>
               {order.sellerName}
             </Text>
@@ -181,6 +236,13 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
             </View>
           </View>
 
+          <DeliveryConfirmationCard
+            order={order}
+            viewerRole={viewerRole}
+            onAcceptDelivery={handleAcceptDelivery}
+            onConfirmDelivered={async () => undefined}
+          />
+
           {canCancel ? (
             <Button
               title="Cancel Order"
@@ -208,6 +270,13 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   sectionTitle: { fontSize: 15, fontWeight: '800', marginBottom: spacing.xs },
+  cardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  linkButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  linkText: { fontSize: 13, fontWeight: '700' },
   body: { fontSize: 14, lineHeight: 20 },
   itemRow: {
     flexDirection: 'row',

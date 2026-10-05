@@ -39,6 +39,36 @@ class AuthService {
       return null;
     }
   }
+
+  /**
+   * Like getCurrentUser, but lets errors through so callers can tell a dead
+   * session (401) apart from a network failure.
+   */
+  async getAccount(): Promise<Models.User<Models.Preferences>> {
+    return this.account.get();
+  }
+
+  // ---- Email verification -------------------------------------------------
+
+  async sendEmailVerification(url: string): Promise<Models.Token> {
+    return this.account.createEmailVerification({ url });
+  }
+
+  async confirmEmailVerification(
+    userId: string,
+    secret: string,
+  ): Promise<Models.Token> {
+    return this.account.updateEmailVerification({ userId, secret });
+  }
+
+  /** Appwrite resets `emailVerification` to false when the email changes. */
+  async changeEmail(
+    email: string,
+    password: string,
+  ): Promise<Models.User<Models.Preferences>> {
+    return this.account.updateEmail({ email, password });
+  }
+
   async updatePassword(
     newPassword: string,
     currentPassword: string,
