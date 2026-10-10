@@ -21,7 +21,7 @@ import {
   ORDER_STATUS_LABELS,
   OrderStatus,
 } from '../../types/order';
-import { formatPrice } from '../../utils/format';
+import { formatPrice, formatShortDateTime } from '../../utils/format';
 import {
   getErrorMessage,
   showErrorSnackbar,
@@ -173,6 +173,12 @@ const SellerOrderDetailScreen = ({ navigation, route }: Props) => {
             </Text>
             <Text style={[styles.body, { color: colors.textSecondary }]}>
               {order.buyerName}
+            </Text>
+            <Text style={[styles.body, { color: colors.textSecondary }]}>
+              Order ID: {order.$id}
+            </Text>
+            <Text style={[styles.body, { color: colors.textSecondary }]}>
+              Placed: {formatShortDateTime(order.$createdAt)}
             </Text>
             <Text style={[styles.body, { color: colors.textSecondary }]}>
               {order.address}, {order.city}, {order.state} - {order.pincode}

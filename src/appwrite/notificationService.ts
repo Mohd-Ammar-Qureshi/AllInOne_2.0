@@ -6,6 +6,15 @@ import {
 } from './client';
 import { AppNotification } from '../types/notification';
 
+/**
+ * How long a notification stays before it expires (measured from its
+ * `$createdAt`, read or unread). Change this one number to change the expiry.
+ */
+export const NOTIFICATION_EXPIRY_DAYS = 30;
+
+const expiryCutoffIso = (days = NOTIFICATION_EXPIRY_DAYS): string =>
+  new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
 class NotificationService {
   private tables: TablesDB;
 
@@ -25,6 +34,7 @@ class NotificationService {
       tableId: APPWRITE_NOTIFICATIONS_TABLE_ID,
       queries: [
         Query.equal('userId', userId),
+        Query.greaterThan('$createdAt', expiryCutoffIso()),
         Query.orderDesc('$createdAt'),
         Query.limit(100),
       ],
@@ -40,6 +50,7 @@ class NotificationService {
       queries: [
         Query.equal('userId', userId),
         Query.equal('read', false),
+        Query.greaterThan('$createdAt', expiryCutoffIso()),
         Query.limit(100),
       ],
     });
@@ -52,6 +63,19 @@ class NotificationService {
       tableId: APPWRITE_NOTIFICATIONS_TABLE_ID,
       rowId: notificationId,
       data: { read: true },
+    });
+  }
+
+  /**
+   * Deletes one notification. Only the recipient can do this: the Functions
+   * create every row with delete permission for that user alone, so Appwrite
+   * rejects (401) a delete of anyone else's notification.
+   */
+  async deleteNotification(notificationId: string): Promise<void> {
+    await this.tables.deleteRow({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: APPWRITE_NOTIFICATIONS_TABLE_ID,
+      rowId: notificationId,
     });
   }
 
@@ -78,32 +102,26 @@ class NotificationService {
     );
   }
   /**
-   * Deletes this user's own already-read notifications older than
-   * `olderThanDays` (default 30). Never touches unread notifications —
-   * only a read, stale notification is safe to lose silently.
+   * Deletes this user's own expired notifications (older than
+   * NOTIFICATION_EXPIRY_DAYS, read or unread). The list/count queries already
+   * hide expired rows; this just removes them from the table.
    *
-   * This is intentionally opportunistic rather than a scheduled server-side
-   * job: it's called (fire-and-forget, never awaited) whenever a user opens
-   * their notification inbox, which is enough to keep the table from
-   * growing unbounded per user without adding a new Appwrite Function,
-   * schedule, or Console setup. Every failure here is swallowed — pruning
-   * must never surface an error or block the inbox from loading.
+   * Opportunistic rather than a scheduled job: called fire-and-forget when a
+   * user opens their inbox, so no new Function or schedule is needed. Every
+   * failure is swallowed - pruning must never block the inbox.
    */
   async pruneOldNotifications(
     userId: string,
-    olderThanDays = 30,
+    olderThanDays = NOTIFICATION_EXPIRY_DAYS,
   ): Promise<void> {
     try {
-      const cutoff = new Date(
-        Date.now() - olderThanDays * 24 * 60 * 60 * 1000,
-      ).toISOString();
+      const cutoff = expiryCutoffIso(olderThanDays);
 
       const response = await this.tables.listRows<AppNotification>({
         databaseId: APPWRITE_DATABASE_ID,
         tableId: APPWRITE_NOTIFICATIONS_TABLE_ID,
         queries: [
           Query.equal('userId', userId),
-          Query.equal('read', true),
           Query.lessThan('$createdAt', cutoff),
           Query.limit(100),
         ],

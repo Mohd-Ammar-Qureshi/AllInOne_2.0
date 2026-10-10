@@ -1,70 +1,68 @@
-# AllInOne 2.0
+# AllInOne 2.0: B2B Medical Marketplace
 
-A full-stack **React Native application** for securely managing and organizing personal product information in one place.
+A full-stack **React Native** mobile app with **24 screens** that connects **Medical Stores** and **Medical Agencies** on one marketplace. Customers (Medical Stores) can browse products, add them to a cart and place orders. Sellers (Medical Agencies) can list and manage their products. Authentication, database, file storage and server-side logic run on **Appwrite**.
 
-AllInOne allows users to save product details they may want to purchase in the future, including product name, description, price, image URL, and status. User authentication and cloud data storage are handled using **Appwrite**.
+📱 **[Download the Android APK](https://github.com/Mohd-Ammar-Qureshi/AllInOne_2.0/releases/latest)** | 💼 **[Watch the demo on LinkedIn](https://lnkd.in/p/dbejJnGz)**
 
-> **Note:** AllInOne is not an e-commerce or shopping application. It is a personal product-record and information-management application.
+---
+
+## 📸 Screenshots
+
+<!-- Add 3-4 screenshots here, for example: login, seller dashboard, product list, cart -->
+_Coming soon_
 
 ---
 
 ## ✨ Features
 
-* 🔐 **User Authentication**
+- 🔐 **Authentication**
+  - User registration, login and logout
+  - Role-based flows for **Customer** and **Seller**
+  - Protected navigation based on login state and role
 
-  * User registration and login
-  * Secure Appwrite authentication
-  * User-specific data
+- 🏪 **Seller tools**
+  - Add, edit and delete products
+  - Upload product images
 
-* 📝 **Product Records**
+- 🛒 **Customer tools**
+  - Browse products
+  - Search and filter products
+  - Cart and order workflow
 
-  * Add product information
-  * Edit existing records
-  * Delete records
-  * View saved products
-  * Store product name, details, price, image URL, and status
+- ☁️ **Appwrite backend**
+  - Authentication, Database, Storage and Functions
 
-* ☁️ **Cloud Backend**
+- 🗂️ **State management**
+  - Redux Toolkit for auth, products, cart and orders
 
-  * Appwrite authentication
-  * Appwrite database
-  * Cloud-based data storage
+- 📱 **24 screens**
+  - Covers authentication, seller product management, browsing, cart and orders
 
-* 🎨 **Modern UI**
-
-  * Dark and light theme
-  * Responsive React Native interface
-  * Reusable UI components
-  * User-friendly navigation
-
-* 🗂️ **State Management**
-
-  * Redux Toolkit
-  * Centralized application state
-  * Authentication and product state management
+- 🎨 **UI**
+  - Reusable components
+  - Dark and light theme
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Technology                      | Purpose                           |
-| ------------------------------- | --------------------------------- |
-| React Native                    | Mobile application                |
-| TypeScript                      | Type safety                       |
-| Appwrite                        | Authentication & backend services |
-| Redux Toolkit                   | State management                  |
-| React Navigation                | Application navigation            |
-| React Native UI components      | User interface                    |
-| Async/Environment configuration | Application configuration         |
+| Technology       | Purpose                               |
+| ---------------- | ------------------------------------- |
+| React Native     | Mobile application                    |
+| TypeScript       | Type safety                           |
+| Redux Toolkit    | State management                      |
+| React Navigation | Navigation and protected routes       |
+| Appwrite         | Auth, Database, Storage and Functions |
 
 ---
 
 ## 🏗️ Project Structure
 
 ```text
-AllInOne/
+AllInOne_2.0/
 ├── android/
 ├── ios/
+├── functions/              # Appwrite Functions
 ├── src/
 │   ├── components/
 │   ├── screens/
@@ -73,95 +71,13 @@ AllInOne/
 │   ├── store/
 │   └── ...
 ├── __tests__/
-├── .env
+├── appwrite.config.json
+├── .env.example
 ├── package.json
-├── tsconfig.json
-├── babel.config.js
-└── README.md
+└── tsconfig.json
 ```
 
-The project follows a modular structure to keep authentication, navigation, services, state management, and UI components separated and maintainable.
-
----
-
-## 🔐 Authentication
-
-Authentication is implemented using **Appwrite Account services**.
-
-The application supports:
-
-* User registration
-* User login
-* User logout
-* Current-user handling
-* Authentication-based navigation
-
-Authenticated users can access and manage their own product records.
-
----
-
-## 📦 Product Management
-
-Users can create personal records for products they are interested in.
-
-Each record can contain:
-
-* **Product Name**
-* **Description / Details**
-* **Price**
-* **Image URL**
-* **Status**
-* **User ID**
-* **Created / Updated timestamps**
-
-The application provides CRUD functionality:
-
-```text
-Create → Read → Update → Delete
-```
-
-This allows users to maintain their own product information without treating the application as an online store.
-
----
-
-## ☁️ Appwrite Backend
-
-Appwrite is used as the backend service for the application.
-
-### Services Used
-
-* **Authentication**
-* **Database**
-* **Cloud Storage / File services where required**
-
-The frontend communicates with Appwrite through service-layer code rather than placing backend logic directly inside UI components.
-
----
-
-## 🔄 State Management
-
-The application uses **Redux Toolkit** to manage application state.
-
-Redux is used to keep important data such as:
-
-* Authentication state
-* Product records
-* Loading states
-* Error states
-* CRUD operation states
-
-This keeps the application state predictable and easier to maintain as the project grows.
-
----
-
-## 🎨 UI & Themes
-
-AllInOne supports both:
-
-* ☀️ Light Mode
-* 🌙 Dark Mode
-
-The UI is built using reusable components to avoid duplicating interface logic across screens.
+The frontend talks to Appwrite through a service layer, so backend logic stays out of the UI components.
 
 ---
 
@@ -170,41 +86,29 @@ The UI is built using reusable components to avoid duplicating interface logic a
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Mohd-Ammar-Qureshi/AllInOne.git
+git clone https://github.com/Mohd-Ammar-Qureshi/AllInOne_2.0.git
+cd AllInOne_2.0
 ```
 
-### 2. Navigate to the project
-
-```bash
-cd AllInOne
-```
-
-### 3. Install dependencies
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 4. Configure environment variables
+### 3. Configure environment variables
 
-Create a `.env` file in the project root and add your Appwrite configuration:
+Copy `.env.example` to `.env` and fill in your own Appwrite values (endpoint, project ID, database and collection IDs).
 
-```env
-APPWRITE_ENDPOINT=your_appwrite_endpoint
-APPWRITE_PROJECT_ID=your_project_id
-APPWRITE_DATABASE_ID=your_database_id
-APPWRITE_COLLECTION_ID=your_collection_id
-```
+> Never commit real API keys, secrets or private credentials to GitHub.
 
-> Never commit real API keys, secrets, or private credentials to GitHub.
-
-### 5. Start Metro
+### 4. Start Metro
 
 ```bash
 npm start
 ```
 
-### 6. Run Android
+### 5. Run on Android
 
 ```bash
 npm run android
@@ -214,55 +118,36 @@ npm run android
 
 ## 📱 Platform
 
-Currently developed and tested primarily for:
-
-* Android
-
-iOS configuration is included in the React Native project and can be configured for development on macOS.
+Developed and tested on **Android**. iOS configuration is included in the React Native project.
 
 ---
 
 ## 🚀 Future Improvements
 
-Planned improvements may include:
-
-* Product search and filtering
-* Sorting by price/status
-* Better image handling
-* Product categories
-* Improved validation
-* Offline support
-* Push notifications
-* Better loading and error states
-* Improved UI/UX
-* Automated testing
-* Production deployment
+- Offline support
+- Push notifications
+- Better loading and error states
+- Automated tests
+- iOS release
 
 ---
 
 ## 📚 What This Project Demonstrates
 
-AllInOne demonstrates practical experience with:
-
-* React Native application development
-* TypeScript
-* Component-based architecture
-* React Navigation
-* Redux Toolkit
-* CRUD operations
-* Authentication
-* Appwrite integration
-* Cloud database integration
-* Environment configuration
-* Dark/light theme implementation
-* Modular project architecture
+- React Native development with TypeScript
+- Role-based authentication and protected navigation
+- CRUD operations, image uploads, search/filter, cart and orders
+- Appwrite Auth, Database, Storage and Functions
+- Redux Toolkit state management
+- Modular, component-based architecture across 24 screens
 
 ---
 
 ## 👨‍💻 Developer
 
-**Mohd Ammar Qureshi**
+**Mohd Ammar Qureshi**: Frontend & React Native Developer
 
+<<<<<<< HEAD
 Web & Mobile Developer focused on:
 
 * JavaScript
@@ -290,3 +175,8 @@ Web & Mobile Developer focused on:
 ## ⭐ Support
 
 If you find this project useful or interesting, consider giving the repository a ⭐ on GitHub.
+=======
+- [LinkedIn](https://www.linkedin.com/in/ammar-qureshi858)
+- [GitHub](https://github.com/Mohd-Ammar-Qureshi)
+- ammarq858@gmail.com
+>>>>>>> 2169022 (Update AllInOne)

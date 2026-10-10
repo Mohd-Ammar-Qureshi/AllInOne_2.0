@@ -12,7 +12,7 @@ import {
   showErrorSnackbar,
   showSuccessSnackbar,
 } from '../../utils/errorHandler';
-import { isValidEmail } from '../../utils/validation';
+import { getEmailChangeError } from '../../utils/validation';
 
 const EmailVerificationScreen = () => {
   const { colors } = useTheme();
@@ -34,6 +34,8 @@ const EmailVerificationScreen = () => {
   const [changing, setChanging] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [confirmError, setConfirmError] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [formError, setFormError] = useState('');
@@ -87,8 +89,14 @@ const EmailVerificationScreen = () => {
       return;
     }
     setFormError('');
-    if (!isValidEmail(newEmail)) {
-      setFormError('Please enter a valid email address.');
+    setConfirmError('');
+    const pairError = getEmailChangeError(newEmail, confirmEmail);
+    if (pairError) {
+      if (pairError.field === 'confirm') {
+        setConfirmError(pairError.message);
+      } else {
+        setFormError(pairError.message);
+      }
       return;
     }
     if (newEmail.trim().toLowerCase() === user?.email?.toLowerCase()) {
@@ -104,6 +112,7 @@ const EmailVerificationScreen = () => {
       const { verificationSent, sendError } = await changeEmail(newEmail, password);
       setChangeOpen(false);
       setNewEmail('');
+      setConfirmEmail('');
       setPassword('');
       setMessage(
         verificationSent
@@ -196,7 +205,22 @@ const EmailVerificationScreen = () => {
             onChangeText={text => {
               setNewEmail(text);
               setFormError('');
+              setConfirmError('');
             }}
+          />
+          <Input
+            label="Confirm new email"
+            placeholder="Re-enter the new email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={confirmEmail}
+            onChangeText={text => {
+              setConfirmEmail(text);
+              setFormError('');
+              setConfirmError('');
+            }}
+            error={confirmError}
           />
           {!hasCachedPassword ? (
             <Input
@@ -227,6 +251,8 @@ const EmailVerificationScreen = () => {
             onPress={() => {
               setChangeOpen(false);
               setFormError('');
+              setConfirmError('');
+              setConfirmEmail('');
             }}
             disabled={changing}
             style={styles.gap}

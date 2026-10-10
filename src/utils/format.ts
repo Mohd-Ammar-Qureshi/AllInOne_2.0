@@ -21,3 +21,18 @@ export const formatShortDate = (isoDate: string): string =>
     month: 'short',
     year: 'numeric',
   });
+
+/** "29 Sep 2026, 2:45 pm" — date and time, for order placement. */
+export const formatShortDateTime = (isoDate: string): string => {
+  const date = new Date(isoDate);
+  const day = date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  const time = date.toLocaleTimeString('en-IN', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  return `${day}, ${time}`;
+};

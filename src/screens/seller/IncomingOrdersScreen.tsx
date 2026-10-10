@@ -7,7 +7,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,7 +28,7 @@ import {
   OrderStatus,
 } from '../../types/order';
 import { getReadableTextColor } from '../../utils/color';
-import { formatPrice, formatShortDate } from '../../utils/format';
+import { formatPrice, formatShortDateTime } from '../../utils/format';
 import { getErrorMessage } from '../../utils/errorHandler';
 import { radius, spacing } from '../../theme';
 
@@ -146,54 +145,76 @@ const IncomingOrdersScreen = ({ navigation }: Props) => {
             data={filteredOrders}
             keyExtractor={item => item.$id}
             contentContainerStyle={styles.list}
-            renderItem={({ item }) => (
-              <Pressable
-                accessibilityRole="button"
+            renderItem={({ item, index }) => (
+              <View
                 accessibilityLabel={`Order ${item.$id
                   .slice(-6)
                   .toUpperCase()} from ${item.buyerName}, ${item.itemCount} item${item.itemCount === 1 ? '' : 's'
                   }, ${formatPrice(item.totalAmount)}, ${getOrderStatusLabel(item)
-                  }, placed ${formatShortDate(item.$createdAt)}`}
-                accessibilityHint="Opens order details"
-                onPress={() =>
-                  navigation.navigate('SellerOrderDetail', {
-                    orderId: item.$id,
-                  })
-                }
-                style={({ pressed }) => [
+                  }, placed ${formatShortDateTime(item.$createdAt)}`}
+                style={[
                   styles.card,
                   {
                     backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                    opacity: pressed ? 0.9 : 1,
+                    borderColor: index === 0 ? colors.primary : colors.border,
                   },
                 ]}>
-                <View style={styles.cardBody}>
-                  <Text style={[styles.buyer, { color: colors.text }]}>
-                    {item.buyerName}
+                {index === 0 ? (
+                  <Text style={[styles.newestTag, { color: colors.primary }]}>
+                    NEWEST ORDER
                   </Text>
-                  <Text style={[styles.meta, { color: colors.textSecondary }]}>
-                    #{item.$id.slice(-6).toUpperCase()} ·{' '}
-                    {formatShortDate(item.$createdAt)}
+                ) : null}
+
+                <View style={styles.cardTop}>
+                  <Text style={[styles.orderNumber, { color: colors.text }]}>
+                    Order #{item.$id.slice(-6).toUpperCase()}
                   </Text>
+                  <OrderStatusPill
+                    status={item.status}
+                    customerDeliveryAccepted={item.customerDeliveryAccepted}
+                    sellerDeliveryConfirmed={item.sellerDeliveryConfirmed}
+                  />
+                </View>
+
+                <Text style={[styles.buyer, { color: colors.text }]}>
+                  {item.buyerName}
+                </Text>
+
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+                <View style={styles.cardRow}>
                   <Text style={[styles.meta, { color: colors.textSecondary }]}>
-                    {item.itemCount} item{item.itemCount === 1 ? '' : 's'} ·{' '}
+                    {item.itemCount} product{item.itemCount === 1 ? '' : 's'}
+                  </Text>
+                  <Text style={[styles.total, { color: colors.text }]}>
                     {formatPrice(item.totalAmount)}
                   </Text>
                 </View>
-                <OrderStatusPill
-                  status={item.status}
-                  customerDeliveryAccepted={item.customerDeliveryAccepted}
-                  sellerDeliveryConfirmed={item.sellerDeliveryConfirmed}
-                />
-                <MaterialIcons
-                  name="chevron-right"
-                  size={22}
-                  color={colors.textSecondary}
-                  accessible={false}
-                  importantForAccessibility="no"
-                />
-              </Pressable>
+                <Text style={[styles.meta, { color: colors.textSecondary }]}>
+                  {formatShortDateTime(item.$createdAt)}
+                </Text>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`View order ${item.$id.slice(-6).toUpperCase()}`}
+                  onPress={() =>
+                    navigation.navigate('SellerOrderDetail', {
+                      orderId: item.$id,
+                    })
+                  }
+                  style={({ pressed }) => [
+                    styles.viewButton,
+                    { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1 },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.viewButtonText,
+                      { color: getReadableTextColor(colors.primary) },
+                    ]}>
+                    View Order
+                  </Text>
+                </Pressable>
+              </View>
             )}
           />
         )}
@@ -228,14 +249,34 @@ const styles = StyleSheet.create({
   filterChipText: { fontSize: 13, fontWeight: '700' },
   list: { paddingBottom: spacing.xxl, gap: spacing.md },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
     borderWidth: 1,
     borderRadius: radius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
+    gap: spacing.xs,
+  },
+  newestTag: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.sm,
   },
-  cardBody: { flex: 1, gap: 4 },
-  buyer: { fontSize: 16, fontWeight: '700' },
+  orderNumber: { fontSize: 17, fontWeight: '800' },
+  buyer: { fontSize: 15, fontWeight: '600' },
+  divider: { height: 1, marginVertical: spacing.sm },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  total: { fontSize: 18, fontWeight: '800' },
   meta: { fontSize: 13 },
+  viewButton: {
+    marginTop: spacing.md,
+    minHeight: 44,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewButtonText: { fontSize: 15, fontWeight: '700' },
 });

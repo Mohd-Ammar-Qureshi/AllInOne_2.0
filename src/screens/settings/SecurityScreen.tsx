@@ -24,7 +24,7 @@ import {
   showSuccessSnackbar,
 } from '../../utils/errorHandler';
 import { getAuthErrorMessage } from '../../utils/authErrors';
-import { isValidEmail, isValidPassword } from '../../utils/validation';
+import { getEmailChangeError, isValidPassword } from '../../utils/validation';
 
 type Props = NativeStackScreenProps<SettingsStackParamList, 'Security'>;
 
@@ -33,6 +33,8 @@ const SecurityScreen = ({ navigation }: Props) => {
   const { user, changeEmail } = useAppwrite();
 
   const [newEmail, setNewEmail] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [confirmEmailError, setConfirmEmailError] = useState('');
   const [emailPassword, setEmailPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [changingEmail, setChangingEmail] = useState(false);
@@ -111,9 +113,15 @@ const SecurityScreen = ({ navigation }: Props) => {
     }
 
     setEmailError('');
+    setConfirmEmailError('');
 
-    if (!isValidEmail(newEmail)) {
-      setEmailError('Please enter a valid email address.');
+    const pairError = getEmailChangeError(newEmail, confirmEmail);
+    if (pairError) {
+      if (pairError.field === 'confirm') {
+        setConfirmEmailError(pairError.message);
+      } else {
+        setEmailError(pairError.message);
+      }
       return;
     }
 
@@ -251,11 +259,26 @@ const SecurityScreen = ({ navigation }: Props) => {
                 onChangeText={text => {
                   setNewEmail(text);
                   setEmailError('');
+                  setConfirmEmailError('');
                 }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!changingEmail}
+              />
+              <Input
+                label="Confirm new email"
+                value={confirmEmail}
+                onChangeText={text => {
+                  setConfirmEmail(text);
+                  setEmailError('');
+                  setConfirmEmailError('');
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!changingEmail}
+                error={confirmEmailError}
               />
               <Input
                 label="Current password"

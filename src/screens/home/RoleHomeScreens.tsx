@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
@@ -16,12 +17,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import productService from '../../appwrite/productService';
 import profileService from '../../appwrite/profileService';
 import notificationService from '../../appwrite/notificationService';
+import orderService from '../../appwrite/orderService';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
 
 import AppHeader from '../../components/ui/AppHeader';
 import AppLogo from '../../components/ui/AppLogo';
 import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
+import EmptyState from '../../components/ui/EmptyState';
+import Loading from '../../components/Loading';
 
 import CustomerBottomNav from '../../components/navigation/CustomerBottomNav';
 import SellerBottomNav from '../../components/navigation/SellerBottomNav';
@@ -54,6 +57,7 @@ type Props = {
       screen:
         | 'Settings'
         | 'Sellers'
+        | 'SellerStore'
         | 'OrderHistory'
         | 'Cart'
         | 'ProductDetail'
@@ -77,6 +81,7 @@ const RoleHomeScreen = ({
   showCatalog,
 }: Props) => {
   const { colors, toggleTheme, isDark } = useTheme();
+  const verifiedColor = isDark ? colors.success : '#166534';
   const { profile, refreshProfile } = useAppwrite();
 
   const licenseStatus = getLicenseStatus(profile);
@@ -94,6 +99,9 @@ const RoleHomeScreen = ({
   const [productQuery, setProductQuery] = useState('');
 
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Seller Home: number of orders still waiting for a decision (real data).
+  const [pendingOrders, setPendingOrders] = useState<number | null>(null);
   const [catalogError, setCatalogError] = useState(false);
 
   const loadCatalog = useCallback(async () => {
@@ -167,6 +175,26 @@ const RoleHomeScreen = ({
       };
     }, [profile?.userId]),
   );
+  // Seller only: how many orders are waiting for accept / reject. Orders are
+  // only available once the licence is verified (same rule as the bottom nav).
+  const loadPendingOrders = useCallback(async () => {
+    if (role !== 'agency' || !licenseVerified || !sellerId) {
+      return;
+    }
+    try {
+      const orders = await orderService.listOrdersForSeller(sellerId);
+      setPendingOrders(orders.filter(order => order.status === 'pending').length);
+    } catch {
+      setPendingOrders(null);
+    }
+  }, [role, licenseVerified, sellerId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPendingOrders();
+    }, [loadPendingOrders]),
+  );
+
   // Seller only: while the licence is not approved yet, re-check the profile
   // whenever Home is shown, so an approval appears without logging in again.
   useFocusEffect(
@@ -183,7 +211,8 @@ const RoleHomeScreen = ({
       refreshProfile().catch(() => undefined);
     }
     loadCatalog();
-  }, [role, refreshProfile, loadCatalog]);
+    loadPendingOrders();
+  }, [role, refreshProfile, loadCatalog, loadPendingOrders]);
   const trimmedAgencyQuery = agencyQuery.trim().toLowerCase();
   const trimmedProductQuery = productQuery.trim().toLowerCase();
 
@@ -219,11 +248,62 @@ const RoleHomeScreen = ({
     return matchesAgencyQuery(agency);
   });
 
+  const isSeller = role === 'agency';
+  const searchValue = isSeller ? productQuery : agencyQuery;
+  const setSearchValue = isSeller ? setProductQuery : setAgencyQuery;
+
+  const isOutOfStock = (product: Product): boolean =>
+    product.status === 'out_of_stock' || product.stock <= 0;
+  const activeCount = products.filter(
+    product => product.status === 'active' && product.stock > 0,
+  ).length;
+  const outOfStockCount = products.filter(isOutOfStock).length;
+
+  const firstName = profile?.name?.trim().split(' ')[0];
+  const heroTextColor = getReadableTextColor(colors.primary);
+  const visibleAgencies = verifiedAgencies.filter(matchesAgencyQuery);
+
+  const renderMetaRow = (icon: React.ComponentProps<typeof MaterialIcons>['name'], text: string) => (
+    <View style={styles.metaRow}>
+      <MaterialIcons name={icon} size={15} color={colors.textSecondary} />
+      <Text
+        numberOfLines={1}
+        style={[styles.productMeta, { color: colors.textSecondary }]}>
+        {text}
+      </Text>
+    </View>
+  );
+
+  const renderProductImage = (product: Product) =>
+    product.imageUrl ? (
+      <Image
+        source={{ uri: product.imageUrl }}
+        style={styles.productImage}
+        resizeMode="cover"
+      />
+    ) : (
+      <View
+        style={[
+          styles.productImage,
+          styles.imagePlaceholder,
+          { backgroundColor: colors.surfaceSecondary },
+        ]}>
+        <MaterialIcons
+          name="medical-services"
+          size={40}
+          color={colors.textSecondary}
+        />
+      </View>
+    );
+
   const renderProduct = ({ item: product }: { item: Product }) => {
     // -----------------------------
     // SELLER HOME PRODUCT CARD
     // -----------------------------
     if (role === 'agency') {
+      const outOfStock = isOutOfStock(product);
+      const stockColor = outOfStock ? colors.error : colors.textSecondary;
+
       return (
         <Pressable
           accessibilityRole="button"
@@ -241,83 +321,50 @@ const RoleHomeScreen = ({
               opacity: pressed ? 0.9 : 1,
             },
           ]}>
-          {product.imageUrl ? (
-            <Image
-              source={{ uri: product.imageUrl }}
-              style={styles.productImage}
-              resizeMode="cover"
-            />
-          ) : null}
+          {renderProductImage(product)}
 
-          <Text
-            style={[
-              styles.productName,
-              { color: colors.text },
-            ]}>
+          <Text style={[styles.productName, { color: colors.text }]}>
             {product.name}
           </Text>
 
-          <Text
-            style={[
-              styles.productPrice,
-              { color: colors.primary },
-            ]}>
+          <Text style={[styles.productPrice, { color: colors.primary }]}>
             {formatPrice(product.price)}
             {product.unit ? ` / ${product.unit}` : ''}
           </Text>
 
-          <Text
-            style={[
-              styles.agencyName,
-              { color: colors.text },
-            ]}>
-            {profile?.name ?? 'Your Product'}
-          </Text>
+          <View style={styles.sellerCardFooter}>
+            <View
+              style={[styles.stockPill, { backgroundColor: `${stockColor}22` }]}>
+              <Text style={[styles.stockPillText, { color: stockColor }]}>
+                {outOfStock ? 'Out of stock' : `Stock: ${product.stock}`}
+              </Text>
+            </View>
+            {product.status === 'draft' ? (
+              <View
+                style={[
+                  styles.stockPill,
+                  { backgroundColor: colors.surfaceSecondary },
+                ]}>
+                <Text
+                  style={[
+                    styles.stockPillText,
+                    { color: colors.textSecondary },
+                  ]}>
+                  Draft
+                </Text>
+              </View>
+            ) : null}
 
-          {profile?.city || profile?.state ? (
-            <Text
-              style={[
-                styles.productMeta,
-                { color: colors.textSecondary },
-              ]}>
-              📍 {[profile.city, profile.state]
-                .filter(Boolean)
-                .join(', ')}
-            </Text>
-          ) : null}
-
-          {profile?.phone ? (
-            <Text
-              style={[
-                styles.productMeta,
-                { color: colors.textSecondary },
-              ]}>
-              📞 {profile.phone}
-            </Text>
-          ) : null}
-
-          <Text
-            style={[
-              styles.productStock,
-              { color: colors.textSecondary },
-            ]}>
-            Stock: {product.stock}
-          </Text>
-
-          <View style={styles.editHintRow}>
-            <Text
-              style={[
-                styles.editHint,
-                { color: colors.primary },
-              ]}>
-              Tap to edit
-            </Text>
-
-            <MaterialIcons
-              name="chevron-right"
-              size={22}
-              color={colors.textSecondary}
-            />
+            <View style={styles.editHintRow}>
+              <Text style={[styles.editHint, { color: colors.primary }]}>
+                Tap to edit
+              </Text>
+              <MaterialIcons
+                name="chevron-right"
+                size={22}
+                color={colors.textSecondary}
+              />
+            </View>
           </View>
         </Pressable>
       );
@@ -336,6 +383,8 @@ const RoleHomeScreen = ({
 
     return (
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${product.name}, ${formatPrice(product.price)}, ${agency.name}, verified agency`}
         onPress={() =>
           navigation.navigate('ProductDetail', {
             productId: product.$id,
@@ -343,70 +392,87 @@ const RoleHomeScreen = ({
             sellerName: agency.name,
           })
         }
-        style={[
+        style={({ pressed }) => [
           styles.productCard,
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
+            opacity: pressed ? 0.9 : 1,
           },
         ]}>
-        {product.imageUrl ? (
-          <Image
-            source={{ uri: product.imageUrl }}
-            style={styles.productImage}
-            resizeMode="cover"
-          />
-        ) : null}
+        {renderProductImage(product)}
 
-        <Text
-          style={[
-            styles.productName,
-            { color: colors.text },
-          ]}>
+        <Text style={[styles.productName, { color: colors.text }]}>
           {product.name}
         </Text>
 
-        <Text
-          style={[
-            styles.productPrice,
-            { color: colors.primary },
-          ]}>
+        <Text style={[styles.productPrice, { color: colors.primary }]}>
           {formatPrice(product.price)}
           {product.unit ? ` / ${product.unit}` : ''}
         </Text>
 
-        <Text
-          style={[
-            styles.agencyName,
-            { color: colors.text },
-          ]}>
-          {agency.name} ✓ Verified
-        </Text>
-
-        {agency.city || agency.state ? (
+        <View
+          style={[styles.agencyRow, { borderTopColor: colors.border }]}>
+          <MaterialIcons name="verified" size={16} color={verifiedColor} />
           <Text
-            style={[
-              styles.productMeta,
-              { color: colors.textSecondary },
-            ]}>
-            📍 {[agency.city, agency.state]
-              .filter(Boolean)
-              .join(', ')}
+            numberOfLines={1}
+            style={[styles.agencyName, { color: colors.text }]}>
+            {agency.name}
           </Text>
-        ) : null}
+          <Text style={[styles.verifiedLabel, { color: verifiedColor }]}>
+            Verified
+          </Text>
+        </View>
 
-        {agency.phone ? (
-          <Text
-            style={[
-              styles.productMeta,
-              { color: colors.textSecondary },
-            ]}>
-            📞 {agency.phone}
-          </Text>
-        ) : null}
+        {agency.city || agency.state
+          ? renderMetaRow(
+              'place',
+              [agency.city, agency.state].filter(Boolean).join(', '),
+            )
+          : null}
+
+        {agency.phone ? renderMetaRow('call', agency.phone) : null}
       </Pressable>
     );
   };
+
+  // The existing search (same state, same filtering), shown as a prominent bar.
+  const searchBar = (
+    <View
+      style={[
+        styles.searchBar,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+      ]}>
+      <MaterialIcons name="search" size={22} color={colors.textSecondary} />
+      <TextInput
+        accessibilityLabel={
+          isSeller ? 'Search your products' : 'Search agencies'
+        }
+        placeholder={
+          isSeller ? 'Search by product name' : 'Search by Agency Name or ID'
+        }
+        placeholderTextColor={colors.textSecondary}
+        value={searchValue}
+        onChangeText={setSearchValue}
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="search"
+        style={[styles.searchInput, { color: colors.text }]}
+      />
+      {searchValue.length > 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Clear search"
+          onPress={() => setSearchValue('')}
+          style={[
+            styles.clearButton,
+            { backgroundColor: colors.surfaceSecondary },
+          ]}>
+          <MaterialIcons name="close" size={18} color={colors.text} />
+        </Pressable>
+      ) : null}
+    </View>
+  );
 
   const listHeader = (
     <>
@@ -470,6 +536,124 @@ const RoleHomeScreen = ({
           />
         </View>
       ) : null}
+      <View style={[styles.hero, { backgroundColor: colors.primary }]}>
+        <Text style={[styles.heroGreeting, { color: heroTextColor }]}>
+          {firstName ? `Hello, ${firstName}` : 'Welcome to AllInOne'}
+        </Text>
+        <Text style={[styles.heroTitle, { color: heroTextColor }]}>
+          {isSeller
+            ? 'Manage your products and orders'
+            : 'Find medical products from verified agencies'}
+        </Text>
+
+        <View style={styles.heroChips}>
+          {isSeller ? (
+            <View
+              style={[styles.heroChip, { backgroundColor: `${heroTextColor}22` }]}>
+              <MaterialIcons
+                name={licenseVerified ? 'verified' : 'hourglass-top'}
+                size={14}
+                color={heroTextColor}
+              />
+              <Text style={[styles.heroChipText, { color: heroTextColor }]}>
+                {licenseVerified
+                  ? 'Verified agency'
+                  : licenseStatus === 'pending'
+                    ? 'Licence under review'
+                    : 'Licence not verified'}
+              </Text>
+            </View>
+          ) : !loadingProducts && !catalogError && verifiedAgencies.length > 0 ? (
+            <>
+              <View
+                style={[
+                  styles.heroChip,
+                  { backgroundColor: `${heroTextColor}22` },
+                ]}>
+                <MaterialIcons name="verified" size={14} color={heroTextColor} />
+                <Text style={[styles.heroChipText, { color: heroTextColor }]}>
+                  {verifiedAgencies.length} verified{' '}
+                  {verifiedAgencies.length === 1 ? 'agency' : 'agencies'}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.heroChip,
+                  { backgroundColor: `${heroTextColor}22` },
+                ]}>
+                <MaterialIcons
+                  name="inventory-2"
+                  size={14}
+                  color={heroTextColor}
+                />
+                <Text style={[styles.heroChipText, { color: heroTextColor }]}>
+                  {products.length}{' '}
+                  {products.length === 1 ? 'product' : 'products'}
+                </Text>
+              </View>
+            </>
+          ) : null}
+        </View>
+      </View>
+
+      {!isSeller && showCatalog ? searchBar : null}
+
+      {isSeller && licenseVerified ? (
+        <View style={styles.statRow}>
+          {[
+            {
+              key: 'pending',
+              label: 'Pending orders',
+              value: pendingOrders === null ? '–' : String(pendingOrders),
+              icon: 'receipt-long' as const,
+              hue: colors.warning,
+              onPress: () => navigation.navigate('IncomingOrders'),
+            },
+            {
+              key: 'active',
+              label: 'Active products',
+              value: String(activeCount),
+              icon: 'inventory-2' as const,
+              hue: colors.statusActive,
+              onPress: () => navigation.navigate('Products'),
+            },
+            {
+              key: 'out',
+              label: 'Out of stock',
+              value: String(outOfStockCount),
+              icon: 'production-quantity-limits' as const,
+              hue: outOfStockCount > 0 ? colors.error : colors.textSecondary,
+              onPress: () => navigation.navigate('Products'),
+            },
+          ].map(stat => (
+            <Pressable
+              key={stat.key}
+              accessibilityRole="button"
+              accessibilityLabel={`${stat.label}: ${stat.value}`}
+              onPress={stat.onPress}
+              style={({ pressed }) => [
+                styles.statCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  opacity: pressed ? 0.9 : 1,
+                },
+              ]}>
+              <View
+                style={[styles.statIcon, { backgroundColor: `${stat.hue}22` }]}>
+                <MaterialIcons name={stat.icon} size={18} color={stat.hue} />
+              </View>
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {stat.value}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                {stat.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
       {quickLinks && quickLinks.length > 0 ? (
         <View style={styles.quickLinks}>
           {quickLinks.map(link => (
@@ -503,77 +687,101 @@ const RoleHomeScreen = ({
         </View>
       ) : null}
 
-      {showCatalog ? (
+      {!isSeller && showCatalog && visibleAgencies.length > 0 ? (
         <View style={styles.catalogSection}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: colors.text },
-            ]}>
-            {role === 'agency'
-              ? 'Your Products'
-              : 'Available Products'}
-          </Text>
-
-          <View style={styles.searchRow}>
-            <View style={styles.searchInputWrap}>
-              <Input
-                placeholder={
-                  role === 'agency'
-                    ? 'Search by product name'
-                    : 'Search by Agency Name or ID'
-                }
-                value={
-                  role === 'agency'
-                    ? productQuery
-                    : agencyQuery
-                }
-                onChangeText={
-                  role === 'agency'
-                    ? setProductQuery
-                    : setAgencyQuery
-                }
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-
-            {(role === 'agency'
-              ? productQuery.length > 0
-              : agencyQuery.length > 0) ? (
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Verified Agencies
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="See all sellers"
+              onPress={() => navigation.navigate('Sellers')}>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>
+                See all
+              </Text>
+            </Pressable>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.agencyScroll}
+            contentContainerStyle={styles.agencyScrollContent}>
+            {visibleAgencies.slice(0, 10).map(agency => (
               <Pressable
+                key={agency.$id}
                 accessibilityRole="button"
-                accessibilityLabel="Clear search"
-                onPress={() => {
-                  if (role === 'agency') {
-                    setProductQuery('');
-                  } else {
-                    setAgencyQuery('');
-                  }
-                }}
-                style={[
-                  styles.clearButton,
+                accessibilityLabel={`${agency.name}, verified agency`}
+                onPress={() =>
+                  navigation.navigate('SellerStore', {
+                    sellerId: agency.userId,
+                    sellerName: agency.name,
+                  })
+                }
+                style={({ pressed }) => [
+                  styles.agencyCard,
                   {
-                    backgroundColor:
-                      colors.surfaceSecondary,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    opacity: pressed ? 0.9 : 1,
                   },
                 ]}>
-                <MaterialIcons
-                  name="close"
-                  size={18}
-                  color={colors.text}
-                />
+                <View
+                  style={[
+                    styles.agencyAvatar,
+                    { backgroundColor: colors.surfaceSecondary },
+                  ]}>
+                  <Text style={[styles.agencyInitial, { color: colors.primary }]}>
+                    {agency.name.trim().charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.agencyCardName, { color: colors.text }]}>
+                  {agency.name}
+                </Text>
+                <View style={styles.agencyBadgeRow}>
+                  <MaterialIcons name="verified" size={14} color={verifiedColor} />
+                  <Text style={[styles.verifiedLabel, { color: verifiedColor }]}>
+                    Verified
+                  </Text>
+                </View>
+                {agency.city ? (
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.agencyCity, { color: colors.textSecondary }]}>
+                    {agency.city}
+                  </Text>
+                ) : null}
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+
+      {showCatalog ? (
+        <View style={styles.catalogSection}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              {isSeller ? 'Your Products' : 'Available Products'}
+            </Text>
+            {isSeller && licenseVerified ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Add a product"
+                onPress={() => navigation.navigate('ProductForm')}
+                style={({ pressed }) => [
+                  styles.addButton,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1 },
+                ]}>
+                <MaterialIcons name="add" size={18} color={heroTextColor} />
+                <Text style={[styles.addButtonText, { color: heroTextColor }]}>
+                  Add
+                </Text>
               </Pressable>
             ) : null}
           </View>
-
-          {loadingProducts ? (
-            <ActivityIndicator
-              size="small"
-              color={colors.primary}
-              style={styles.loader}
-            />
-          ) : null}
+          {isSeller ? searchBar : null}
         </View>
       ) : null}
     </>
@@ -715,22 +923,51 @@ const RoleHomeScreen = ({
                 style={styles.errorButton}
               />
             </View>
-          ) : showCatalog &&
-            !loadingProducts ? (
-            <Text
-              style={[
-                styles.body,
-                styles.emptyText,
-                { color: colors.textSecondary },
-              ]}>
-              {role === 'agency'
-                ? trimmedProductQuery
-                  ? 'No products found for that name.'
-                  : 'No products yet.'
-                : trimmedAgencyQuery
-                  ? 'No products found for that agency.'
-                  : 'No products available right now.'}
-            </Text>
+          ) : showCatalog && loadingProducts && products.length === 0 ? (
+            <Loading
+              message={
+                isSeller ? 'Loading your products...' : 'Loading products...'
+              }
+              fullScreen={false}
+            />
+          ) : showCatalog && !loadingProducts ? (
+            <EmptyState
+              icon={searchValue.trim() ? 'search-off' : 'inventory-2'}
+              title={
+                isSeller
+                  ? searchValue.trim()
+                    ? 'No matching products'
+                    : 'No products yet'
+                  : searchValue.trim()
+                    ? 'No matching agencies'
+                    : 'No products available'
+              }
+              description={
+                isSeller
+                  ? searchValue.trim()
+                    ? 'No products found for that name.'
+                    : licenseVerified
+                      ? 'Add your first product to start receiving orders.'
+                      : 'Products you add will appear here once your licence is approved.'
+                  : searchValue.trim()
+                    ? 'No products found for that agency.'
+                    : 'Products from verified agencies will appear here.'
+              }
+              actionLabel={
+                searchValue.trim()
+                  ? 'Clear search'
+                  : isSeller && licenseVerified
+                    ? 'Add Product'
+                    : undefined
+              }
+              onAction={
+                searchValue.trim()
+                  ? () => setSearchValue('')
+                  : isSeller && licenseVerified
+                    ? () => navigation.navigate('ProductForm')
+                    : undefined
+              }
+            />
           ) : null
         }
         showsVerticalScrollIndicator={false}
@@ -819,11 +1056,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
 
-  body: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: spacing.md,
-  },
   licenseCard: {
     borderWidth: 1,
     borderRadius: radius.lg,
@@ -882,27 +1114,178 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
 
-  searchRow: {
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+
+  seeAll: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  hero: {
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+
+  heroGreeting: {
+    fontSize: 14,
+    fontWeight: '600',
+    opacity: 0.9,
+  },
+
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    lineHeight: 28,
+    marginTop: spacing.xs,
+  },
+
+  heroChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+
+  heroChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+
+  heroChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    minHeight: 52,
+    borderWidth: 1,
+    borderRadius: radius.full,
+    paddingLeft: spacing.lg,
+    paddingRight: spacing.sm,
+    marginBottom: spacing.lg,
   },
 
-  searchInputWrap: {
+  searchInput: {
     flex: 1,
+    fontSize: 16,
+    paddingVertical: spacing.sm,
   },
 
   clearButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  statRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+
+  statCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: 2,
+  },
+
+  statIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+
+  statValue: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingLeft: spacing.sm,
+    paddingRight: spacing.md,
+    minHeight: 36,
+    borderRadius: radius.full,
+  },
+
+  addButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  agencyScroll: {
+    flexGrow: 0,
+    marginHorizontal: -spacing.lg,
+  },
+
+  agencyScrollContent: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+
+  agencyCard: {
+    width: 140,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: 4,
+  },
+
+  agencyAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xs,
   },
 
-  loader: {
-    marginTop: spacing.md,
+  agencyInitial: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+
+  agencyCardName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  agencyBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+
+  agencyCity: {
+    fontSize: 12,
   },
 
   productCard: {
@@ -931,36 +1314,69 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
 
-  agencyName: {
-    fontSize: 14,
-    fontWeight: '600',
+  imagePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  agencyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: spacing.sm,
     marginBottom: spacing.xs,
   },
 
-  productMeta: {
-    fontSize: 13,
-    marginTop: spacing.xs,
+  agencyName: {
+    flexShrink: 1,
+    fontSize: 14,
+    fontWeight: '600',
   },
 
-  productStock: {
+  verifiedLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 2,
+  },
+
+  productMeta: {
+    flexShrink: 1,
     fontSize: 13,
-    marginTop: spacing.xs,
+  },
+
+  sellerCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+
+  stockPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+
+  stockPillText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   editHintRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.sm,
+    marginLeft: 'auto',
   },
 
   editHint: {
     fontSize: 13,
     fontWeight: '600',
-  },
-
-  emptyText: {
-    marginTop: spacing.md,
   },
 
   errorCard: {
