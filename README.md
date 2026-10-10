@@ -273,7 +273,6 @@ Web & Mobile Developer focused on:
 * Tailwind CSS
 
 ### GitHub
-
 [github.com/Mohd-Ammar-Qureshi](https://github.com/Mohd-Ammar-Qureshi)
 
 ---
