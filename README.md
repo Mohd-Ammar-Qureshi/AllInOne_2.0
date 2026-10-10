@@ -13,6 +13,16 @@ _Coming soon_
 
 ---
 
+## 🔗 Links
+
+📱 **Download APK:** [Latest release](https://github.com/Mohd-Ammar-Qureshi/AllInOne_2.0/releases/latest)
+  
+💼 **LinkedIn post / demo:** [Watch on LinkedIn](https://lnkd.in/p/dbejJnGz)
+
+👤 **Developer:** [Mohd Ammar Qureshi](https://www.linkedin.com/in/ammar-qureshi858)
+
+---
+
 ## ✨ Features
 
 - 🔐 **Authentication**
@@ -159,16 +169,6 @@ Web & Mobile Developer focused on:
 
 ### GitHub
 [github.com/Mohd-Ammar-Qureshi](https://github.com/Mohd-Ammar-Qureshi)
-
----
-
-## 🔗 Links
-
-📱 **Download APK:** [Latest release](https://github.com/Mohd-Ammar-Qureshi/AllInOne_2.0/releases/latest)
-  
-💼 **LinkedIn post / demo:** [Watch on LinkedIn](https://lnkd.in/p/dbejJnGz)
-
-👤 **Developer:** [Mohd Ammar Qureshi](https://www.linkedin.com/in/ammar-qureshi858)
 
 ---
 
