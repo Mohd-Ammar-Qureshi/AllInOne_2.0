@@ -278,6 +278,16 @@ Web & Mobile Developer focused on:
 
 ---
 
+## 🔗 Links
+
+📱 **Download APK:** [Latest release](https://github.com/Mohd-Ammar-Qureshi/AllInOne_2.0/releases/latest)
+  
+💼 **LinkedIn post / demo:** [Watch on LinkedIn](https://lnkd.in/p/dbejJnGz)
+
+👤 **Developer:** [Mohd Ammar Qureshi](https://www.linkedin.com/in/ammar-qureshi858)
+
+---
+
 ## ⭐ Support
 
 If you find this project useful or interesting, consider giving the repository a ⭐ on GitHub.
