@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
+import { images } from '../../assets/images';
 import VerificationLayout from '../../components/auth/VerificationLayout';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -144,6 +145,7 @@ const EmailVerificationScreen = () => {
 
   return (
     <VerificationLayout
+      illustration={images.otpIllustration}
       title="Verify your email"
       subtitle={
         remaining > 0

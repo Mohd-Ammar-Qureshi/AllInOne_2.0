@@ -7,7 +7,6 @@ import {
   UserRole,
 } from '../../types/user';
 import { radius, spacing } from '../../theme';
-import { getReadableTextColor } from '../../utils/color';
 
 type RolePickerProps = {
   value: UserRole | null;
@@ -22,7 +21,6 @@ const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
 
 const RolePicker = ({ value, onChange, error }: RolePickerProps) => {
   const { colors } = useTheme();
-  const onPrimary = getReadableTextColor(colors.primary);
 
   return (
     <View style={styles.container}>
@@ -36,33 +34,35 @@ const RolePicker = ({ value, onChange, error }: RolePickerProps) => {
           return (
             <Pressable
               key={role}
-              accessibilityRole="button"
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
               onPress={() => onChange(role)}
               style={[
                 styles.option,
                 {
-                  backgroundColor: selected
-                    ? colors.primary
-                    : colors.surfaceSecondary,
+                  backgroundColor: selected ? colors.primaryTint : colors.surface,
                   borderColor: selected ? colors.primary : colors.border,
                 },
+                selected && styles.optionSelected,
               ]}>
-              <Text
+              <View
                 style={[
-                  styles.optionTitle,
-                  { color: selected ? onPrimary : colors.text },
+                  styles.radio,
+                  { borderColor: selected ? colors.primary : colors.borderStrong },
                 ]}>
-                {USER_ROLE_LABELS[role]}
-              </Text>
-              <Text
-                style={[
-                  styles.optionDescription,
-                  {
-                    color: selected ? onPrimary : colors.textSecondary,
-                  },
-                ]}>
-                {ROLE_DESCRIPTIONS[role]}
-              </Text>
+                {selected ? (
+                  <View style={[styles.radioDot, { backgroundColor: colors.primary }]} />
+                ) : null}
+              </View>
+              <View style={styles.optionText}>
+                <Text style={[styles.optionTitle, { color: colors.text }]}>
+                  {USER_ROLE_LABELS[role]}
+                </Text>
+                <Text
+                  style={[styles.optionDescription, { color: colors.textSecondary }]}>
+                  {ROLE_DESCRIPTIONS[role]}
+                </Text>
+              </View>
             </Pressable>
           );
         })}
@@ -84,17 +84,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
   },
   options: {
     gap: spacing.sm,
   },
   option: {
-    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     borderRadius: radius.md,
+    borderWidth: 1,
     padding: spacing.md,
   },
+  optionSelected: { borderWidth: 1.5 },
+  optionText: { flex: 1, minWidth: 0 },
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioDot: { width: 10, height: 10, borderRadius: 5 },
   optionTitle: {
     fontSize: 15,
     fontWeight: '700',

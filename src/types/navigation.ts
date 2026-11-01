@@ -17,7 +17,8 @@ export type MedicalStoreStackParamList = SharedAppParamList & {
   Cart: undefined;
   Checkout: undefined;
   OrderHistory: undefined;
-  OrderDetail: { orderId: string };
+  /** `justPlaced` is set right after checkout to show the success card. */
+  OrderDetail: { orderId: string; justPlaced?: boolean };
   Notifications: undefined;
 };
 
@@ -40,6 +41,8 @@ export type SettingsStackParamList = {
   SettingsHome: undefined;
   Account: undefined;
   Security: undefined;
+  ChangePassword: undefined;
+  ChangeEmail: undefined;
   Notifications: undefined;
   About: undefined;
   Terms: undefined;

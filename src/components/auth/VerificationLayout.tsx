@@ -1,6 +1,7 @@
 import React, { PropsWithChildren, useEffect } from 'react';
 import {
   BackHandler,
+  ImageSourcePropType,
   Keyboard,
   KeyboardAvoidingView,
   ScrollView,
@@ -9,12 +10,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Illustration from '../ui/Illustration';
 import { useTheme } from '../../context/ThemeContext';
-import { radius, spacing } from '../../theme';
+import { radius, shadows, spacing } from '../../theme';
 
 type Props = PropsWithChildren<{
   title: string;
   subtitle: string;
+  /** Optional artwork shown above the title. */
+  illustration?: ImageSourcePropType;
 }>;
 
 /**
@@ -22,7 +26,12 @@ type Props = PropsWithChildren<{
  * These screens are NOT inside a navigator, so Android Back closes the
  * keyboard first (like useKeyboardBackHandler) without any navigation hooks.
  */
-const VerificationLayout = ({ title, subtitle, children }: Props) => {
+const VerificationLayout = ({
+  title,
+  subtitle,
+  illustration,
+  children,
+}: Props) => {
   const { colors } = useTheme();
 
   useEffect(() => {
@@ -43,6 +52,13 @@ const VerificationLayout = ({ title, subtitle, children }: Props) => {
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled">
+          {illustration ? (
+            <Illustration
+              source={illustration}
+              maxWidth={280}
+              style={styles.illustration}
+            />
+          ) : null}
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -52,7 +68,7 @@ const VerificationLayout = ({ title, subtitle, children }: Props) => {
           <View
             style={[
               styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.surface, borderColor: colors.divider },
             ]}>
             {children}
           </View>
@@ -73,12 +89,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xl,
   },
+  illustration: { marginBottom: spacing.lg },
   header: { marginBottom: spacing.lg },
-  title: { fontSize: 28, fontWeight: '800', marginBottom: spacing.xs },
+  title: { fontSize: 28, lineHeight: 36, fontWeight: '700', marginBottom: spacing.xs },
   subtitle: { fontSize: 15, lineHeight: 22 },
   card: {
     borderRadius: radius.lg,
     borderWidth: 1,
     padding: spacing.xl,
+    ...shadows.card,
   },
 });

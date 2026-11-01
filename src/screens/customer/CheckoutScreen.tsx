@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,7 +22,7 @@ import {
   showErrorSnackbar,
   showSuccessSnackbar,
 } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Props = NativeStackScreenProps<MedicalStoreStackParamList, 'Checkout'>;
 
@@ -84,7 +83,10 @@ const CheckoutScreen = ({ navigation }: Props) => {
 
       cart.clearCart();
       showSuccessSnackbar('Order created successfully');
-      navigation.replace('OrderDetail', { orderId: order.$id });
+      navigation.replace('OrderDetail', {
+        orderId: order.$id,
+        justPlaced: true,
+      });
     } catch (err) {
       showErrorSnackbar(err, getErrorMessage(err, 'Unable to place order.'));
     } finally {
@@ -111,7 +113,7 @@ const CheckoutScreen = ({ navigation }: Props) => {
             <View
               style={[
                 styles.summary,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.surface, borderColor: colors.divider },
               ]}>
               <Text style={[styles.summaryTitle, { color: colors.text }]}>
                 {cart.itemCount} item{cart.itemCount === 1 ? '' : 's'}
@@ -230,6 +232,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    ...shadows.card,
   },
   summaryTitle: { fontSize: 15, fontWeight: '700' },
   summaryValue: { fontSize: 18, fontWeight: '800' },

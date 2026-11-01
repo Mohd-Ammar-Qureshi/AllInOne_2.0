@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { useTheme } from '../../context/ThemeContext';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Badge = {
   label: string;
@@ -34,12 +34,12 @@ const ProfileSummaryCard = ({
 }: ProfileSummaryCardProps) => {
   const { colors } = useTheme();
 
-  const toneColor = (tone: Badge['tone']) =>
+  const tonePalette = (tone: Badge['tone']) =>
     tone === 'success'
-      ? colors.success
+      ? { bg: colors.successSoft, fg: colors.successText }
       : tone === 'warning'
-      ? colors.warning
-      : colors.primary;
+        ? { bg: colors.warningSoft, fg: colors.warningText }
+        : { bg: colors.infoSoft, fg: colors.infoText };
 
   return (
     <Pressable
@@ -50,12 +50,14 @@ const ProfileSummaryCard = ({
         styles.card,
         {
           backgroundColor: colors.surface,
-          borderColor: colors.border,
+          borderColor: colors.divider,
           opacity: pressed ? 0.9 : 1,
         },
       ]}>
-      <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-        <Text style={styles.initials}>{getInitials(name)}</Text>
+      <View style={[styles.avatar, { backgroundColor: colors.primaryLight }]}>
+        <Text style={[styles.initials, { color: colors.primary }]}>
+          {getInitials(name)}
+        </Text>
       </View>
 
       <View style={styles.info}>
@@ -73,9 +75,15 @@ const ProfileSummaryCard = ({
           {badges.map(badge => (
             <View
               key={badge.label}
-              style={[styles.badge, { borderColor: toneColor(badge.tone) }]}>
+              style={[
+                styles.badge,
+                { backgroundColor: tonePalette(badge.tone).bg },
+              ]}>
               <Text
-                style={[styles.badgeText, { color: toneColor(badge.tone) }]}>
+                style={[
+                  styles.badgeText,
+                  { color: tonePalette(badge.tone).fg },
+                ]}>
                 {badge.label}
               </Text>
             </View>
@@ -86,7 +94,7 @@ const ProfileSummaryCard = ({
       <MaterialIcons
         name="chevron-right"
         size={24}
-        color={colors.textSecondary}
+        color={colors.textMuted}
       />
     </Pressable>
   );
@@ -103,6 +111,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.xl,
+    ...shadows.card,
   },
   avatar: {
     width: 60,
@@ -112,7 +121,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   initials: {
-    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '800',
   },
@@ -134,10 +142,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   badge: {
-    borderWidth: 1,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
   badgeText: {
     fontSize: 12,

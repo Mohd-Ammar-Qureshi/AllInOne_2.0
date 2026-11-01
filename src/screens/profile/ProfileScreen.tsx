@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,7 +22,7 @@ import {
   showErrorSnackbar,
   showSuccessSnackbar,
 } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Props = NativeStackScreenProps<SharedAppParamList, 'Profile'>;
 
@@ -152,7 +151,7 @@ const ProfileScreen = ({ navigation }: Props) => {
             <View
               style={[
                 styles.card,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.surface, borderColor: colors.divider },
               ]}>
               <Text style={[styles.roleLabel, { color: colors.textSecondary }]}>
                 Role
@@ -255,6 +254,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: spacing.lg,
+    ...shadows.card,
   },
   roleLabel: {
     fontSize: 13,

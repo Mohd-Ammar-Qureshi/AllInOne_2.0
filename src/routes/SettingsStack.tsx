@@ -2,6 +2,8 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AboutScreen from '../screens/settings/AboutScreen';
 import AccountScreen from '../screens/settings/AccountScreen';
+import ChangeEmailScreen from '../screens/settings/ChangeEmailScreen';
+import ChangePasswordScreen from '../screens/settings/ChangePasswordScreen';
 import LegalScreen from '../screens/settings/LegalScreen';
 import NotificationsScreen from '../screens/settings/NotificationsScreen';
 import SecurityScreen from '../screens/settings/SecurityScreen';
@@ -30,6 +32,8 @@ export const SettingsStack = () => {
       <Stack.Screen name="SettingsHome" component={SettingsScreen} />
       <Stack.Screen name="Account" component={AccountScreen} />
       <Stack.Screen name="Security" component={SecurityScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <Stack.Screen name="ChangeEmail" component={ChangeEmailScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Terms" component={LegalScreen} />

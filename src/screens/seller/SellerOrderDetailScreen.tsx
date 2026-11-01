@@ -27,7 +27,7 @@ import {
   showErrorSnackbar,
   showSuccessSnackbar,
 } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Props = NativeStackScreenProps<AgencyStackParamList, 'SellerOrderDetail'>;
 
@@ -166,7 +166,7 @@ const SellerOrderDetailScreen = ({ navigation, route }: Props) => {
           <View
             style={[
               styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.surface, borderColor: colors.divider },
             ]}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Buyer
@@ -196,7 +196,7 @@ const SellerOrderDetailScreen = ({ navigation, route }: Props) => {
           <View
             style={[
               styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.surface, borderColor: colors.divider },
             ]}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Items
@@ -267,6 +267,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: spacing.xs,
+    ...shadows.card,
   },
   sectionTitle: { fontSize: 15, fontWeight: '800', marginBottom: spacing.xs },
   body: { fontSize: 14, lineHeight: 20 },

@@ -11,7 +11,7 @@ import { CartItem, useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
 import { MedicalStoreStackParamList } from '../../types/navigation';
 import { formatPrice } from '../../utils/format';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Props = NativeStackScreenProps<MedicalStoreStackParamList, 'Cart'>;
 
@@ -52,7 +52,7 @@ const CartScreen = ({ navigation }: Props) => {
                   <View
                     style={[
                       styles.card,
-                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      { backgroundColor: colors.surface, borderColor: colors.divider },
                     ]}>
                     {item.imageUrl ? (
                       <Image
@@ -97,12 +97,12 @@ const CartScreen = ({ navigation }: Props) => {
                           hitSlop={6}
                           style={[
                             styles.stepperButton,
-                            { backgroundColor: colors.surfaceSecondary },
+                            { backgroundColor: colors.primaryLight },
                           ]}>
                           <MaterialIcons
                             name={willRemoveOnDecrement ? 'delete-outline' : 'remove'}
                             size={16}
-                            color={willRemoveOnDecrement ? colors.error : colors.text}
+                            color={willRemoveOnDecrement ? colors.error : colors.primary}
                           />
                         </Pressable>
                         <Text style={[styles.stepperValue, { color: colors.text }]}>
@@ -120,11 +120,11 @@ const CartScreen = ({ navigation }: Props) => {
                           style={[
                             styles.stepperButton,
                             {
-                              backgroundColor: colors.surfaceSecondary,
+                              backgroundColor: colors.primaryLight,
                               opacity: atMaxStock ? 0.4 : 1,
                             },
                           ]}>
-                          <MaterialIcons name="add" size={16} color={colors.text} />
+                          <MaterialIcons name="add" size={16} color={colors.primary} />
                         </Pressable>
                       </View>
                       {atMaxStock ? (
@@ -162,7 +162,7 @@ const CartScreen = ({ navigation }: Props) => {
             <View
               style={[
                 styles.summary,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.surface, borderColor: colors.divider },
               ]}>
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
@@ -200,6 +200,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.md,
+    ...shadows.card,
   },
   image: { width: 48, height: 48, borderRadius: radius.md },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
@@ -224,6 +225,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
+    ...shadows.card,
   },
   summaryRow: {
     flexDirection: 'row',

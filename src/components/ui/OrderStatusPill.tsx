@@ -1,54 +1,63 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { getOrderStatusLabel, Order } from '../../types/order';
 import { radius, spacing } from '../../theme';
+import { MaterialIconName } from './IconBadge';
 
 type Props = Pick<Order, 'status'> &
   Partial<Pick<Order, 'customerDeliveryAccepted' | 'sellerDeliveryConfirmed'>>;
 
-// Text colours for the light theme. The theme's own status colours are fine on
-// the dark background but too pale on white (contrast 2.8-3.9:1, below the
-// 4.5:1 WCAG AA minimum), so light mode uses a darker shade of the same hue.
-const LIGHT_MODE_TEXT = {
-  warning: '#92400E',
-  active: '#166534',
-  inactive: '#B91C1C',
-  info: '#1D4ED8',
+type Tone = 'warning' | 'success' | 'error' | 'info';
+
+const ICONS: Record<Order['status'], MaterialIconName> = {
+  pending: 'schedule',
+  accepted: 'check-circle',
+  rejected: 'cancel',
+  cancelled: 'block',
+  shipped: 'local-shipping',
+  delivered: 'done-all',
 };
 
+/**
+ * Pastel status pill with an icon. Colours come from the theme's soft/text
+ * pairs, which are chosen to pass WCAG AA contrast in light and dark mode.
+ */
 const OrderStatusPill = ({
   status,
   customerDeliveryAccepted,
   sellerDeliveryConfirmed,
 }: Props) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
-  const deliveryAccepted = status === 'shipped' && Boolean(customerDeliveryAccepted);
+  const deliveryAccepted =
+    status === 'shipped' && Boolean(customerDeliveryAccepted);
 
   // Shipped (amber) -> Delivery Accepted (blue) -> Delivered (green).
-  const tone = deliveryAccepted
+  const tone: Tone = deliveryAccepted
     ? 'info'
     : status === 'delivered' || status === 'accepted'
-      ? 'active'
+      ? 'success'
       : status === 'rejected' || status === 'cancelled'
-        ? 'inactive'
+        ? 'error'
         : 'warning';
 
-  const hue =
-    tone === 'active'
-      ? colors.statusActive
-      : tone === 'inactive'
-        ? colors.statusOutOfStock
-        : tone === 'info'
-          ? colors.primary
-          : colors.warning;
-
-  const textColor = isDark ? hue : LIGHT_MODE_TEXT[tone];
+  const palette = {
+    warning: { bg: colors.warningSoft, fg: colors.warningText },
+    success: { bg: colors.successSoft, fg: colors.successText },
+    error: { bg: colors.errorSoft, fg: colors.errorText },
+    info: { bg: colors.infoSoft, fg: colors.infoText },
+  }[tone];
 
   return (
-    <View style={[styles.pill, { backgroundColor: `${hue}22` }]}>
-      <Text style={[styles.label, { color: textColor }]}>
+    <View style={[styles.pill, { backgroundColor: palette.bg }]}>
+      <MaterialIcons
+        name={deliveryAccepted ? 'inventory' : ICONS[status]}
+        size={14}
+        color={palette.fg}
+      />
+      <Text style={[styles.label, { color: palette.fg }]}>
         {getOrderStatusLabel({
           status,
           customerDeliveryAccepted,
@@ -63,8 +72,12 @@ export default OrderStatusPill;
 
 const styles = StyleSheet.create({
   pill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 5,
     borderRadius: radius.full,
   },
   label: { fontSize: 12, fontWeight: '700' },

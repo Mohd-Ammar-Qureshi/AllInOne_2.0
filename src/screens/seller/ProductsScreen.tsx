@@ -29,7 +29,7 @@ import {
 } from '../../types/product';
 import { formatPrice } from '../../utils/format';
 import { getErrorMessage, showErrorSnackbar } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Props = NativeStackScreenProps<AgencyStackParamList, 'Products'>;
 
@@ -215,7 +215,7 @@ const ProductsScreen = ({ navigation }: Props) => {
                   styles.card,
                   {
                     backgroundColor: colors.surface,
-                    borderColor: colors.border,
+                    borderColor: colors.divider,
                     opacity: pressed ? 0.9 : 1,
                   },
                 ]}>
@@ -308,6 +308,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.md,
+    ...shadows.card,
   },
   image: { width: 56, height: 56, borderRadius: radius.md },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },

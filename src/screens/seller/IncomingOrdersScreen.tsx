@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react';
 import {
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -13,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
 import orderService from '../../appwrite/orderService';
 import AppHeader from '../../components/ui/AppHeader';
+import ChipTabs from '../../components/ui/ChipTabs';
 import SellerBottomNav from '../../components/navigation/SellerBottomNav';
 import EmptyState from '../../components/ui/EmptyState';
 import ErrorState from '../../components/ui/ErrorState';
@@ -30,7 +30,7 @@ import {
 import { getReadableTextColor } from '../../utils/color';
 import { formatPrice, formatShortDateTime } from '../../utils/format';
 import { getErrorMessage } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { radius, shadows, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<AgencyStackParamList, 'IncomingOrders'>;
 
@@ -83,45 +83,14 @@ const IncomingOrdersScreen = ({ navigation }: Props) => {
         />
 
         {!loading && !error && orders.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterScroll}
-            contentContainerStyle={styles.filterRow}>
-            {(['all', ...ORDER_STATUSES] as StatusFilter[]).map(value => {
-              const selected = statusFilter === value;
-              const label = value === 'all' ? 'All' : ORDER_STATUS_LABELS[value];
-
-              return (
-                <Pressable
-                  key={value}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  onPress={() => setStatusFilter(value)}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: selected
-                        ? colors.primary
-                        : colors.surfaceSecondary,
-                      borderColor: selected ? colors.primary : colors.border,
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      {
-                        color: selected
-                          ? getReadableTextColor(colors.primary)
-                          : colors.text,
-                      },
-                    ]}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          <ChipTabs
+            options={(['all', ...ORDER_STATUSES] as StatusFilter[]).map(value => ({
+              key: value,
+              label: value === 'all' ? 'All' : ORDER_STATUS_LABELS[value],
+            }))}
+            value={statusFilter}
+            onChange={setStatusFilter}
+          />
         ) : null}
 
         {loading ? (
@@ -156,7 +125,7 @@ const IncomingOrdersScreen = ({ navigation }: Props) => {
                   styles.card,
                   {
                     backgroundColor: colors.surface,
-                    borderColor: index === 0 ? colors.primary : colors.border,
+                    borderColor: index === 0 ? colors.primary : colors.divider,
                   },
                 ]}>
                 {index === 0 ? (
@@ -229,30 +198,13 @@ export default IncomingOrdersScreen;
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  // A horizontal ScrollView has flexGrow: 1 by default, so inside this column it
-  // grew to fill half the screen and pushed the list down. Keep it its own height.
-  filterScroll: { flexGrow: 0, flexShrink: 0 },
-  filterRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingBottom: spacing.lg,
-    alignItems: 'center',
-  },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  filterChipText: { fontSize: 13, fontWeight: '700' },
   list: { paddingBottom: spacing.xxl, gap: spacing.md },
   card: {
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: spacing.xs,
+    ...shadows.card,
   },
   newestTag: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
   cardTop: {

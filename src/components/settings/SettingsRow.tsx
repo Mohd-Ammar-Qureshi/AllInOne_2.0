@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
+import IconBadge from '../ui/IconBadge';
 import { useTheme } from '../../context/ThemeContext';
 import { IconName } from '../../settings/settingsConfig';
-import { radius, spacing } from '../../theme';
+import { spacing } from '../../theme';
 
 type SettingsRowProps = {
   icon: IconName;
@@ -42,10 +43,12 @@ const SettingsRow = ({
         styles.row,
         { opacity: disabled ? 0.5 : pressed ? 0.85 : 1 },
       ]}>
-      <View
-        style={[styles.iconWrap, { backgroundColor: colors.surfaceSecondary }]}>
-        <MaterialIcons name={icon} size={20} color={accent} />
-      </View>
+      <IconBadge
+        icon={icon}
+        color={accent}
+        background={danger ? colors.errorSoft : colors.primaryLight}
+        size={38}
+      />
 
       <View style={styles.textWrap}>
         <Text
@@ -75,7 +78,7 @@ const SettingsRow = ({
           <MaterialIcons
             name="chevron-right"
             size={22}
-            color={colors.textSecondary}
+            color={colors.textMuted}
           />
         ) : null)}
     </Pressable>
@@ -92,13 +95,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     gap: spacing.md,
-  },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   textWrap: {
     flex: 1,

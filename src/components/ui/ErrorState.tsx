@@ -15,7 +15,9 @@ const ErrorState = ({ message, onRetry }: ErrorStateProps) => {
 
   return (
     <View style={styles.container}>
-      <MaterialIcons name="error-outline" size={48} color={colors.error} />
+      <View style={[styles.iconWrap, { backgroundColor: colors.errorSoft }]}>
+        <MaterialIcons name="error-outline" size={40} color={colors.error} />
+      </View>
       <Text style={[styles.message, { color: colors.text }]}>{message}</Text>
       {onRetry ? (
         <Button title="Try Again" onPress={onRetry} style={styles.button} />
@@ -33,6 +35,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
     gap: spacing.md,
+  },
+  iconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   message: {
     fontSize: 16,

@@ -6,7 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
@@ -18,11 +18,16 @@ import productService from '../../appwrite/productService';
 import profileService from '../../appwrite/profileService';
 import notificationService from '../../appwrite/notificationService';
 import orderService from '../../appwrite/orderService';
+import { images } from '../../assets/images';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
 
 import AppHeader from '../../components/ui/AppHeader';
 import AppLogo from '../../components/ui/AppLogo';
 import Button from '../../components/ui/Button';
+import QuickActionTile from '../../components/ui/QuickActionTile';
+import SearchBar from '../../components/ui/SearchBar';
+import SectionHeader from '../../components/ui/SectionHeader';
+import StatCard from '../../components/ui/StatCard';
 import EmptyState from '../../components/ui/EmptyState';
 import Loading from '../../components/Loading';
 
@@ -43,13 +48,19 @@ import { formatPrice } from '../../utils/format';
 import { getReadableTextColor } from '../../utils/color';
 import { getLicenseStatus } from '../../utils/license';
 import { IconName } from '../../settings/settingsConfig';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type QuickLink = {
   label: string;
   icon: IconName;
   onPress: () => void;
 };
+
+// The Home banner artwork is light, so the hero keeps fixed light-surface
+// colours (deep brand navy text) in both themes for reliable contrast.
+const HERO_BG = '#E9F3FF'; // matches the artwork's own background edge
+const HERO_INK = '#0F2A5C';
+const HERO_CHIP_BG = 'rgba(255, 255, 255, 0.85)';
 
 type Props = {
   navigation: {
@@ -82,6 +93,7 @@ const RoleHomeScreen = ({
 }: Props) => {
   const { colors, toggleTheme, isDark } = useTheme();
   const verifiedColor = isDark ? colors.success : '#166534';
+  const { width: windowWidth } = useWindowDimensions();
   const { profile, refreshProfile } = useAppwrite();
 
   const licenseStatus = getLicenseStatus(profile);
@@ -261,6 +273,9 @@ const RoleHomeScreen = ({
 
   const firstName = profile?.name?.trim().split(' ')[0];
   const heroTextColor = getReadableTextColor(colors.primary);
+  // Show the artwork's right side inside a clipped frame beside the text.
+  const heroArtHeight = windowWidth >= 600 ? 125 : 88;
+  const heroArtWidth = Math.round(heroArtHeight * 1.3);
   const visibleAgencies = verifiedAgencies.filter(matchesAgencyQuery);
 
   const renderMetaRow = (icon: React.ComponentProps<typeof MaterialIcons>['name'], text: string) => (
@@ -317,7 +332,7 @@ const RoleHomeScreen = ({
             styles.productCard,
             {
               backgroundColor: colors.surface,
-              borderColor: colors.border,
+              borderColor: colors.divider,
               opacity: pressed ? 0.9 : 1,
             },
           ]}>
@@ -396,7 +411,7 @@ const RoleHomeScreen = ({
           styles.productCard,
           {
             backgroundColor: colors.surface,
-            borderColor: colors.border,
+            borderColor: colors.divider,
             opacity: pressed ? 0.9 : 1,
           },
         ]}>
@@ -436,43 +451,41 @@ const RoleHomeScreen = ({
     );
   };
 
-  // The existing search (same state, same filtering), shown as a prominent bar.
+  // The existing search (same state, same filtering) in the shared pill field.
   const searchBar = (
-    <View
-      style={[
-        styles.searchBar,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-      ]}>
-      <MaterialIcons name="search" size={22} color={colors.textSecondary} />
-      <TextInput
-        accessibilityLabel={
-          isSeller ? 'Search your products' : 'Search agencies'
-        }
-        placeholder={
-          isSeller ? 'Search by product name' : 'Search by Agency Name or ID'
-        }
-        placeholderTextColor={colors.textSecondary}
+    <View style={styles.searchWrap}>
+      <SearchBar
+        accessibilityLabel={isSeller ? 'Search your products' : 'Search agencies'}
+        placeholder={isSeller ? 'Search by product name' : 'Search by Agency Name or ID'}
         value={searchValue}
         onChangeText={setSearchValue}
-        autoCapitalize="none"
-        autoCorrect={false}
-        returnKeyType="search"
-        style={[styles.searchInput, { color: colors.text }]}
       />
-      {searchValue.length > 0 ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Clear search"
-          onPress={() => setSearchValue('')}
-          style={[
-            styles.clearButton,
-            { backgroundColor: colors.surfaceSecondary },
-          ]}>
-          <MaterialIcons name="close" size={18} color={colors.text} />
-        </Pressable>
-      ) : null}
     </View>
   );
+
+  // 2x2 shortcut tiles. Only destinations that exist in this role's stack.
+  const quickActions: {
+    key: string;
+    title: string;
+    subtitle: string;
+    icon: React.ComponentProps<typeof QuickActionTile>['icon'];
+    tone: React.ComponentProps<typeof QuickActionTile>['tone'];
+    onPress: () => void;
+  }[] = isSeller
+    ? licenseVerified
+      ? [
+          { key: 'orders', title: 'Orders', subtitle: 'Accept and track orders', icon: 'receipt-long', tone: 'peach', onPress: () => navigation.navigate('IncomingOrders') },
+          { key: 'products', title: 'My Products', subtitle: 'Manage your catalogue', icon: 'inventory-2', tone: 'green', onPress: () => navigation.navigate('Products') },
+          { key: 'add', title: 'Add Product', subtitle: 'List a new product', icon: 'add-box', tone: 'blue', onPress: () => navigation.navigate('ProductForm') },
+          { key: 'alerts', title: 'Notifications', subtitle: unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up', icon: 'notifications', tone: 'purple', onPress: () => navigation.navigate('Notifications') },
+        ]
+      : []
+    : [
+        { key: 'sellers', title: 'Agencies', subtitle: 'Browse verified agencies', icon: 'storefront', tone: 'blue', onPress: () => navigation.navigate('Sellers') },
+        { key: 'orders', title: 'My Orders', subtitle: 'Track your orders', icon: 'receipt-long', tone: 'green', onPress: () => navigation.navigate('OrderHistory') },
+        { key: 'cart', title: 'Cart', subtitle: 'Review your cart', icon: 'shopping-cart', tone: 'peach', onPress: () => navigation.navigate('Cart') },
+        { key: 'alerts', title: 'Notifications', subtitle: unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up', icon: 'notifications', tone: 'purple', onPress: () => navigation.navigate('Notifications') },
+      ];
 
   const listHeader = (
     <>
@@ -482,7 +495,7 @@ const RoleHomeScreen = ({
             styles.licenseCard,
             {
               backgroundColor: colors.surface,
-              borderColor: colors.border,
+              borderColor: colors.divider,
             },
           ]}>
           <View style={styles.licenseRow}>
@@ -536,63 +549,88 @@ const RoleHomeScreen = ({
           />
         </View>
       ) : null}
-      <View style={[styles.hero, { backgroundColor: colors.primary }]}>
-        <Text style={[styles.heroGreeting, { color: heroTextColor }]}>
-          {firstName ? `Hello, ${firstName}` : 'Welcome to AllInOne'}
-        </Text>
-        <Text style={[styles.heroTitle, { color: heroTextColor }]}>
-          {isSeller
-            ? 'Manage your products and orders'
-            : 'Find medical products from verified agencies'}
-        </Text>
+      <View style={[styles.hero, { backgroundColor: HERO_BG }]}>
+        <View style={styles.heroTop}>
+          <View style={styles.heroText}>
+            <Text style={[styles.heroGreeting, { color: HERO_INK }]}>
+              {firstName ? `Hello, ${firstName}` : 'Welcome to AllInOne'}
+            </Text>
+            <Text style={[styles.heroTitle, { color: HERO_INK }]}>
+              {isSeller
+                ? 'Manage products and orders'
+                : 'Shop from verified agencies'}
+            </Text>
+          </View>
+
+          <View
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+            style={[
+              styles.heroArtFrame,
+              { width: heroArtWidth, height: heroArtHeight },
+            ]}>
+            <Image
+              source={images.dashboardHero}
+              accessibilityIgnoresInvertColors
+              resizeMode="cover"
+              style={[
+                styles.heroArt,
+                {
+                  height: heroArtHeight,
+                  width: heroArtHeight * (1200 / 556),
+                },
+              ]}
+            />
+          </View>
+        </View>
 
         <View style={styles.heroChips}>
-          {isSeller ? (
-            <View
-              style={[styles.heroChip, { backgroundColor: `${heroTextColor}22` }]}>
-              <MaterialIcons
-                name={licenseVerified ? 'verified' : 'hourglass-top'}
-                size={14}
-                color={heroTextColor}
-              />
-              <Text style={[styles.heroChipText, { color: heroTextColor }]}>
-                {licenseVerified
-                  ? 'Verified agency'
-                  : licenseStatus === 'pending'
-                    ? 'Licence under review'
-                    : 'Licence not verified'}
-              </Text>
-            </View>
-          ) : !loadingProducts && !catalogError && verifiedAgencies.length > 0 ? (
-            <>
+            {isSeller ? (
               <View
-                style={[
-                  styles.heroChip,
-                  { backgroundColor: `${heroTextColor}22` },
-                ]}>
-                <MaterialIcons name="verified" size={14} color={heroTextColor} />
-                <Text style={[styles.heroChipText, { color: heroTextColor }]}>
-                  {verifiedAgencies.length} verified{' '}
-                  {verifiedAgencies.length === 1 ? 'agency' : 'agencies'}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.heroChip,
-                  { backgroundColor: `${heroTextColor}22` },
-                ]}>
+                style={[styles.heroChip, { backgroundColor: HERO_CHIP_BG }]}>
                 <MaterialIcons
-                  name="inventory-2"
+                  name={licenseVerified ? 'verified' : 'hourglass-top'}
                   size={14}
-                  color={heroTextColor}
+                  color={HERO_INK}
                 />
-                <Text style={[styles.heroChipText, { color: heroTextColor }]}>
-                  {products.length}{' '}
-                  {products.length === 1 ? 'product' : 'products'}
+                <Text style={[styles.heroChipText, { color: HERO_INK }]}>
+                  {licenseVerified
+                    ? 'Verified agency'
+                    : licenseStatus === 'pending'
+                      ? 'Licence under review'
+                      : 'Licence not verified'}
                 </Text>
               </View>
-            </>
-          ) : null}
+            ) : !loadingProducts && !catalogError && verifiedAgencies.length > 0 ? (
+              <>
+                <View
+                  style={[
+                    styles.heroChip,
+                    { backgroundColor: HERO_CHIP_BG },
+                  ]}>
+                  <MaterialIcons name="verified" size={14} color={HERO_INK} />
+                  <Text style={[styles.heroChipText, { color: HERO_INK }]}>
+                    {verifiedAgencies.length} verified{' '}
+                    {verifiedAgencies.length === 1 ? 'agency' : 'agencies'}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.heroChip,
+                    { backgroundColor: HERO_CHIP_BG },
+                  ]}>
+                  <MaterialIcons
+                    name="inventory-2"
+                    size={14}
+                    color={HERO_INK}
+                  />
+                  <Text style={[styles.heroChipText, { color: HERO_INK }]}>
+                    {products.length}{' '}
+                    {products.length === 1 ? 'product' : 'products'}
+                  </Text>
+                </View>
+              </>
+            ) : null}
         </View>
       </View>
 
@@ -600,56 +638,45 @@ const RoleHomeScreen = ({
 
       {isSeller && licenseVerified ? (
         <View style={styles.statRow}>
-          {[
-            {
-              key: 'pending',
-              label: 'Pending orders',
-              value: pendingOrders === null ? '–' : String(pendingOrders),
-              icon: 'receipt-long' as const,
-              hue: colors.warning,
-              onPress: () => navigation.navigate('IncomingOrders'),
-            },
-            {
-              key: 'active',
-              label: 'Active products',
-              value: String(activeCount),
-              icon: 'inventory-2' as const,
-              hue: colors.statusActive,
-              onPress: () => navigation.navigate('Products'),
-            },
-            {
-              key: 'out',
-              label: 'Out of stock',
-              value: String(outOfStockCount),
-              icon: 'production-quantity-limits' as const,
-              hue: outOfStockCount > 0 ? colors.error : colors.textSecondary,
-              onPress: () => navigation.navigate('Products'),
-            },
-          ].map(stat => (
-            <Pressable
-              key={stat.key}
-              accessibilityRole="button"
-              accessibilityLabel={`${stat.label}: ${stat.value}`}
-              onPress={stat.onPress}
-              style={({ pressed }) => [
-                styles.statCard,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  opacity: pressed ? 0.9 : 1,
-                },
-              ]}>
-              <View
-                style={[styles.statIcon, { backgroundColor: `${stat.hue}22` }]}>
-                <MaterialIcons name={stat.icon} size={18} color={stat.hue} />
-              </View>
-              <Text style={[styles.statValue, { color: colors.text }]}>
-                {stat.value}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                {stat.label}
-              </Text>
-            </Pressable>
+          <StatCard
+            label="Pending orders"
+            value={pendingOrders === null ? '–' : pendingOrders}
+            icon="receipt-long"
+            tone="peach"
+            onPress={() => navigation.navigate('IncomingOrders')}
+          />
+          <StatCard
+            label="Active products"
+            value={activeCount}
+            icon="inventory-2"
+            tone="green"
+            onPress={() => navigation.navigate('Products')}
+          />
+          <StatCard
+            label="Out of stock"
+            value={outOfStockCount}
+            icon="production-quantity-limits"
+            tone={outOfStockCount > 0 ? 'pink' : 'teal'}
+            onPress={() => navigation.navigate('Products')}
+          />
+        </View>
+      ) : null}
+
+      {quickActions.length > 0 ? (
+        <View style={styles.quickGrid}>
+          {[0, 2].map(start => (
+            <View key={start} style={styles.quickRow}>
+              {quickActions.slice(start, start + 2).map(action => (
+                <QuickActionTile
+                  key={action.key}
+                  title={action.title}
+                  subtitle={action.subtitle}
+                  icon={action.icon}
+                  tone={action.tone}
+                  onPress={action.onPress}
+                />
+              ))}
+            </View>
           ))}
         </View>
       ) : null}
@@ -665,7 +692,7 @@ const RoleHomeScreen = ({
                 styles.quickLink,
                 {
                   backgroundColor: colors.surface,
-                  borderColor: colors.border,
+                  borderColor: colors.divider,
                   opacity: pressed ? 0.9 : 1,
                 },
               ]}>
@@ -689,19 +716,11 @@ const RoleHomeScreen = ({
 
       {!isSeller && showCatalog && visibleAgencies.length > 0 ? (
         <View style={styles.catalogSection}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Verified Agencies
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="See all sellers"
-              onPress={() => navigation.navigate('Sellers')}>
-              <Text style={[styles.seeAll, { color: colors.primary }]}>
-                See all
-              </Text>
-            </Pressable>
-          </View>
+          <SectionHeader
+            title="Verified Agencies"
+            actionLabel="See all"
+            onAction={() => navigation.navigate('Sellers')}
+          />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -722,7 +741,7 @@ const RoleHomeScreen = ({
                   styles.agencyCard,
                   {
                     backgroundColor: colors.surface,
-                    borderColor: colors.border,
+                    borderColor: colors.divider,
                     opacity: pressed ? 0.9 : 1,
                   },
                 ]}>
@@ -808,8 +827,8 @@ const RoleHomeScreen = ({
                 style={[
                   styles.iconButton,
                   {
-                    backgroundColor:
-                      colors.surfaceSecondary,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.divider,
                   },
                 ]}>
                 <MaterialIcons
@@ -845,8 +864,8 @@ const RoleHomeScreen = ({
                 style={[
                   styles.iconButton,
                   {
-                    backgroundColor:
-                      colors.surfaceSecondary,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.divider,
                   },
                 ]}>
                 <MaterialIcons
@@ -869,8 +888,8 @@ const RoleHomeScreen = ({
                 style={[
                   styles.iconButton,
                   {
-                    backgroundColor:
-                      colors.surfaceSecondary,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.divider,
                   },
                 ]}>
                 <MaterialIcons
@@ -899,7 +918,7 @@ const RoleHomeScreen = ({
                 styles.errorCard,
                 {
                   backgroundColor: colors.surface,
-                  borderColor: colors.border,
+                  borderColor: colors.divider,
                 },
               ]}>
               <MaterialIcons
@@ -1025,6 +1044,8 @@ const styles = StyleSheet.create({
   },
 
   iconButton: {
+    borderWidth: 1,
+    ...shadows.card,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -1057,6 +1078,7 @@ const styles = StyleSheet.create({
   },
 
   licenseCard: {
+    ...shadows.card,
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: spacing.lg,
@@ -1130,6 +1152,31 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    overflow: 'hidden',
+  },
+
+  heroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+
+  heroArtFrame: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: radius.md,
+  },
+
+  heroArt: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+  },
+
+  heroText: {
+    flex: 1,
+    minWidth: 0,
+    alignSelf: 'flex-start',
   },
 
   heroGreeting: {
@@ -1139,9 +1186,9 @@ const styles = StyleSheet.create({
   },
 
   heroTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
-    lineHeight: 28,
+    lineHeight: 24,
     marginTop: spacing.xs,
   },
 
@@ -1166,30 +1213,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    minHeight: 52,
-    borderWidth: 1,
-    borderRadius: radius.full,
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.sm,
+
+
+
+  searchWrap: {
     marginBottom: spacing.lg,
   },
 
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    paddingVertical: spacing.sm,
+  quickGrid: {
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
 
-  clearButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+  quickRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
 
   statRow: {
@@ -1198,32 +1236,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
 
-  statCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    gap: 2,
-  },
 
-  statIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
 
-  statValue: {
-    fontSize: 22,
-    fontWeight: '800',
-  },
 
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
 
   addButton: {
     flexDirection: 'row',
@@ -1252,6 +1267,7 @@ const styles = StyleSheet.create({
   },
 
   agencyCard: {
+    ...shadows.card,
     width: 140,
     borderWidth: 1,
     borderRadius: radius.lg,
@@ -1289,6 +1305,7 @@ const styles = StyleSheet.create({
   },
 
   productCard: {
+    ...shadows.card,
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: spacing.md,
@@ -1380,6 +1397,7 @@ const styles = StyleSheet.create({
   },
 
   errorCard: {
+    ...shadows.card,
     alignItems: 'center',
     gap: spacing.md,
     borderWidth: 1,

@@ -14,7 +14,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { MedicalStoreStackParamList } from '../../types/navigation';
 import { Profile } from '../../types/profile';
 import { getErrorMessage } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Props = NativeStackScreenProps<MedicalStoreStackParamList, 'Sellers'>;
 
@@ -83,14 +83,14 @@ const SellersListScreen = ({ navigation }: Props) => {
                   styles.card,
                   {
                     backgroundColor: colors.surface,
-                    borderColor: colors.border,
+                    borderColor: colors.divider,
                     opacity: pressed ? 0.9 : 1,
                   },
                 ]}>
                 <View
                   style={[
                     styles.iconWrap,
-                    { backgroundColor: colors.surfaceSecondary },
+                    { backgroundColor: colors.primaryLight },
                   ]}>
                   <MaterialIcons
                     name="storefront"
@@ -131,7 +131,7 @@ const SellersListScreen = ({ navigation }: Props) => {
                 <MaterialIcons
                   name="chevron-right"
                   size={22}
-                  color={colors.textSecondary}
+                  color={colors.textMuted}
                 />
               </Pressable>
             )}
@@ -156,6 +156,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.md,
+    ...shadows.card,
   },
   iconWrap: {
     width: 48,

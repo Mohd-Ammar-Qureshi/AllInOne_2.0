@@ -24,7 +24,7 @@ import {
 } from '../../utils/errorHandler';
 import { getLicenseStatus, getRejectionReason } from '../../utils/license';
 import { isValidLicenseNumber } from '../../utils/validation';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Props = NativeStackScreenProps<
   AgencyStackParamList,
@@ -132,7 +132,7 @@ const LicenseVerificationScreen = ({ navigation }: Props) => {
             <View
               style={[
                 styles.card,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.surface, borderColor: colors.divider },
               ]}>
               <View
                 style={[
@@ -292,6 +292,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.xl,
     alignItems: 'stretch',
+    ...shadows.card,
   },
   iconWrap: {
     width: 64,

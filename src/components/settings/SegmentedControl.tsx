@@ -42,7 +42,7 @@ function SegmentedControl<T extends string>({
               styles.segment,
               selected && {
                 backgroundColor: colors.surface,
-                borderColor: colors.border,
+                borderColor: colors.divider,
               },
             ]}>
             {option.icon ? (

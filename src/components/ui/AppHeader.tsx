@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing } from '../../theme';
+import { shadows, spacing } from '../../theme';
 
 type AppHeaderProps = {
   title?: string;
@@ -40,7 +40,8 @@ const AppHeader = ({
             style={({ pressed }) => [
               styles.iconButton,
               {
-                backgroundColor: colors.surfaceSecondary,
+                backgroundColor: colors.surface,
+                borderColor: colors.divider,
                 opacity: pressed ? 0.8 : 1,
               },
             ]}>
@@ -85,8 +86,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '700',
   },
   subtitle: {
     fontSize: 14,
@@ -96,7 +98,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.card,
   },
 });

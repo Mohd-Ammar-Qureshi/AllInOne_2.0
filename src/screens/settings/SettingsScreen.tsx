@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import MaterialIcons from '@react-native-vector-icons/material-icons';
 import {
   NativeStackNavigationProp,
   NativeStackScreenProps,
@@ -12,6 +20,7 @@ import SegmentedControl from '../../components/settings/SegmentedControl';
 import SettingsRow from '../../components/settings/SettingsRow';
 import SettingsSection from '../../components/settings/SettingsSection';
 import AppHeader from '../../components/ui/AppHeader';
+import Button from '../../components/ui/Button';
 import { APP_NAME, APP_VERSION } from '../../constants/appInfo';
 import { useSettings } from '../../context/SettingsContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -24,7 +33,7 @@ import {
   LanguageCode,
   SettingsItem,
 } from '../../settings/settingsConfig';
-import { ThemePreference, spacing } from '../../theme';
+import { radius, ThemePreference, spacing } from '../../theme';
 import { getLicenseStatus } from '../../utils/license';
 import {
   AgencyStackParamList,
@@ -54,6 +63,7 @@ const SettingsScreen = ({ navigation }: Props) => {
 
   const [languageSheetOpen, setLanguageSheetOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutAlertVisible, setLogoutAlertVisible] = useState(false);
 
   // Profile and Licence screens live in the parent (role) stack.
   const openAppScreen = (screen: 'Profile' | 'LicenseVerification') => {
@@ -127,29 +137,21 @@ const SettingsScreen = ({ navigation }: Props) => {
     }
   };
 
-  const confirmLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log out',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            setLoggingOut(true);
-            const success = await logout();
-            if (success) {
-              showSuccessSnackbar('Logout successful');
-            } else {
-              showErrorSnackbar('Unable to log out. Please try again.');
-              setLoggingOut(false);
-            }
-          } catch {
-            showErrorSnackbar('Unable to log out. Please try again.');
-            setLoggingOut(false);
-          }
-        },
-      },
-    ]);
+  const performLogout = async () => {
+    setLogoutAlertVisible(false);
+    try {
+      setLoggingOut(true);
+      const success = await logout();
+      if (success) {
+        showSuccessSnackbar('Logout successful');
+      } else {
+        showErrorSnackbar('Unable to log out. Please try again.');
+        setLoggingOut(false);
+      }
+    } catch {
+      showErrorSnackbar('Unable to log out. Please try again.');
+      setLoggingOut(false);
+    }
   };
 
   const badges = [
@@ -198,7 +200,7 @@ const SettingsScreen = ({ navigation }: Props) => {
               title={loggingOut ? 'Logging out...' : 'Log out'}
               danger
               disabled={loggingOut}
-              onPress={confirmLogout}
+              onPress={() => setLogoutAlertVisible(true)}
             />
           </SettingsSection>
 
@@ -225,6 +227,62 @@ const SettingsScreen = ({ navigation }: Props) => {
         }}
         onClose={() => setLanguageSheetOpen(false)}
       />
+
+      <Modal
+        visible={logoutAlertVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutAlertVisible(false)}>
+        <View style={styles.dialogRoot}>
+          <Pressable
+            style={[styles.dialogBackdrop, { backgroundColor: colors.overlay }]}
+            onPress={() => setLogoutAlertVisible(false)}
+            accessibilityLabel="Close logout confirmation"
+          />
+          <View
+            style={[
+              styles.dialog,
+              { backgroundColor: colors.surface },
+            ]}
+            accessibilityRole="alert">
+            <View
+              style={[
+                styles.logoutIcon,
+                { backgroundColor: colors.errorSoft },
+              ]}>
+              <MaterialIcons
+                name="logout"
+                size={26}
+                color={colors.errorText}
+              />
+            </View>
+            <Text style={[styles.dialogTitle, { color: colors.text }]}>
+              Log out?
+            </Text>
+            <Text
+              style={[
+                styles.dialogMessage,
+                { color: colors.textSecondary },
+              ]}>
+              Are you sure you want to log out of your account?
+            </Text>
+            <View style={styles.dialogActions}>
+              <Button
+                title="Cancel"
+                variant="ghost"
+                onPress={() => setLogoutAlertVisible(false)}
+                style={styles.dialogButton}
+              />
+              <Button
+                title="Log out"
+                variant="danger"
+                onPress={performLogout}
+                style={styles.dialogButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -237,6 +295,49 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: spacing.xxl,
+  },
+  dialogRoot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  dialogBackdrop: {
+    ...StyleSheet.absoluteFill,
+  },
+  dialog: {
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+  },
+  logoutIcon: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    marginBottom: spacing.md,
+  },
+  dialogTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: spacing.xs,
+  },
+  dialogMessage: {
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  dialogActions: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  dialogButton: {
+    flex: 1,
   },
   content: {
     paddingHorizontal: spacing.lg,

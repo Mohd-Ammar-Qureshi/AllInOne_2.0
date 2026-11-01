@@ -1,11 +1,11 @@
 import React from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
-import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SettingsRow from '../../components/settings/SettingsRow';
 import SettingsSection from '../../components/settings/SettingsSection';
 import AppHeader from '../../components/ui/AppHeader';
+import AppLogo from '../../components/ui/AppLogo';
 import {
   APP_NAME,
   APP_TAGLINE,
@@ -13,7 +13,7 @@ import {
   SUPPORT_EMAIL,
 } from '../../constants/appInfo';
 import { useTheme } from '../../context/ThemeContext';
-import { radius, spacing } from '../../theme';
+import { spacing } from '../../theme';
 import { SettingsStackParamList } from '../../types/navigation';
 import { showInfoSnackbar } from '../../utils/errorHandler';
 
@@ -46,9 +46,7 @@ const AboutScreen = ({ navigation }: Props) => {
           />
 
           <View style={styles.hero}>
-            <View style={[styles.logo, { backgroundColor: colors.primary }]}>
-              <MaterialIcons name="storefront" size={40} color="#FFFFFF" />
-            </View>
+            <AppLogo size={88} />
             <Text style={[styles.name, { color: colors.text }]}>
               {APP_NAME}
             </Text>
@@ -83,17 +81,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     paddingVertical: spacing.lg,
   },
-  logo: {
-    width: 80,
-    height: 80,
-    borderRadius: radius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
   name: {
     fontSize: 24,
     fontWeight: '800',
+    marginTop: spacing.md,
   },
   tagline: {
     fontSize: 14,

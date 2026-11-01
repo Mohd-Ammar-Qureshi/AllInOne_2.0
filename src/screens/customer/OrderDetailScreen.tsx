@@ -5,12 +5,14 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
+import { images } from '../../assets/images';
 import orderService, { isStaleOrderError } from '../../appwrite/orderService';
 import DeliveryConfirmationCard from '../../components/orders/DeliveryConfirmationCard';
 import OrderProgress from '../../components/orders/OrderProgress';
 import AppHeader from '../../components/ui/AppHeader';
 import Button from '../../components/ui/Button';
 import ErrorState from '../../components/ui/ErrorState';
+import Illustration from '../../components/ui/Illustration';
 import Loading from '../../components/Loading';
 import { useTheme } from '../../context/ThemeContext';
 import { MedicalStoreStackParamList } from '../../types/navigation';
@@ -26,14 +28,14 @@ import {
   showErrorSnackbar,
   showSuccessSnackbar,
 } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Props = NativeStackScreenProps<MedicalStoreStackParamList, 'OrderDetail'>;
 
 const OrderDetailScreen = ({ navigation, route }: Props) => {
   const { colors } = useTheme();
   const { user } = useAppwrite();
-  const { orderId } = route.params;
+  const { orderId, justPlaced } = route.params;
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,12 +144,34 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
             onBack={() => navigation.goBack()}
           />
 
+          {justPlaced ? (
+            <View
+              style={[
+                styles.successCard,
+                { backgroundColor: colors.surface, borderColor: colors.divider },
+              ]}>
+              <Illustration
+                source={images.successIllustration}
+                maxWidth={240}
+                bordered={false}
+              />
+              <Text style={[styles.successTitle, { color: colors.text }]}>
+                Order placed
+              </Text>
+              <Text
+                style={[styles.successBody, { color: colors.textSecondary }]}>
+                Your order has been sent to {order.sellerName}. You will be
+                notified as soon as they respond.
+              </Text>
+            </View>
+          ) : null}
+
           <OrderProgress status={order.status} />
 
           <View
             style={[
               styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.surface, borderColor: colors.divider },
             ]}>
             <View style={styles.cardTitleRow}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -182,7 +206,7 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
           <View
             style={[
               styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.surface, borderColor: colors.divider },
             ]}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Delivery Details
@@ -203,7 +227,7 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
           <View
             style={[
               styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.surface, borderColor: colors.divider },
             ]}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Items
@@ -260,6 +284,25 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
 export default OrderDetailScreen;
 
 const styles = StyleSheet.create({
+  successCard: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
+    ...shadows.card,
+  },
+  successTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginTop: spacing.sm,
+  },
+  successBody: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
   container: { flex: 1 },
   scrollContent: { paddingBottom: spacing.xxl },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.lg },
@@ -268,6 +311,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: spacing.xs,
+    ...shadows.card,
   },
   sectionTitle: { fontSize: 15, fontWeight: '800', marginBottom: spacing.xs },
   cardTitleRow: {

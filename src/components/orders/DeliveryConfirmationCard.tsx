@@ -45,7 +45,7 @@ const DeliveryConfirmationCard = ({
     <View
       style={[
         styles.card,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        { backgroundColor: colors.surface, borderColor: colors.divider },
       ]}>
       <Text style={[styles.title, { color: colors.text }]}>
         {completed ? 'Delivery Completed' : 'Delivery Status'}

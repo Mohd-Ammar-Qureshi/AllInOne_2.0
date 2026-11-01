@@ -9,7 +9,7 @@ import AppHeader from '../../components/ui/AppHeader';
 import { useSettings } from '../../context/SettingsContext';
 import { useTheme } from '../../context/ThemeContext';
 import { getNotificationOptions } from '../../settings/settingsConfig';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 import { SettingsStackParamList } from '../../types/navigation';
 
 type Props = NativeStackScreenProps<SettingsStackParamList, 'Notifications'>;
@@ -102,6 +102,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.xl,
+    ...shadows.card,
   },
   bannerText: {
     flex: 1,

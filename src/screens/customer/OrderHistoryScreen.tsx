@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react';
 import {
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -14,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
 import orderService from '../../appwrite/orderService';
 import AppHeader from '../../components/ui/AppHeader';
+import ChipTabs from '../../components/ui/ChipTabs';
 import CustomerBottomNav from '../../components/navigation/CustomerBottomNav';
 import EmptyState from '../../components/ui/EmptyState';
 import ErrorState from '../../components/ui/ErrorState';
@@ -28,10 +28,9 @@ import {
   ORDER_STATUS_LABELS,
   OrderStatus,
 } from '../../types/order';
-import { getReadableTextColor } from '../../utils/color';
 import { formatPrice, formatShortDate } from '../../utils/format';
 import { getErrorMessage } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { radius, shadows, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<MedicalStoreStackParamList, 'OrderHistory'>;
 
@@ -84,45 +83,14 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
         />
 
         {!loading && !error && orders.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterScroll}
-            contentContainerStyle={styles.filterRow}>
-            {(['all', ...ORDER_STATUSES] as StatusFilter[]).map(value => {
-              const selected = statusFilter === value;
-              const label = value === 'all' ? 'All' : ORDER_STATUS_LABELS[value];
-
-              return (
-                <Pressable
-                  key={value}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  onPress={() => setStatusFilter(value)}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: selected
-                        ? colors.primary
-                        : colors.surfaceSecondary,
-                      borderColor: selected ? colors.primary : colors.border,
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      {
-                        color: selected
-                          ? getReadableTextColor(colors.primary)
-                          : colors.text,
-                      },
-                    ]}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          <ChipTabs
+            options={(['all', ...ORDER_STATUSES] as StatusFilter[]).map(value => ({
+              key: value,
+              label: value === 'all' ? 'All' : ORDER_STATUS_LABELS[value],
+            }))}
+            value={statusFilter}
+            onChange={setStatusFilter}
+          />
         ) : null}
 
         {loading ? (
@@ -164,35 +132,52 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
                   styles.card,
                   {
                     backgroundColor: colors.surface,
-                    borderColor: colors.border,
+                    borderColor: colors.divider,
                     opacity: pressed ? 0.9 : 1,
                   },
                 ]}>
-                <View style={styles.cardBody}>
-                  <Text style={[styles.sellerName, { color: colors.text }]}>
-                    {item.sellerName}
+                <View style={styles.cardTop}>
+                  <View style={styles.cardBody}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.sellerName, { color: colors.text }]}>
+                      {item.sellerName}
+                    </Text>
+                    <Text style={[styles.meta, { color: colors.textSecondary }]}>
+                      #{item.$id.slice(-6).toUpperCase()} ·{' '}
+                      {formatShortDate(item.$createdAt)}
+                    </Text>
+                  </View>
+                  <OrderStatusPill
+                    status={item.status}
+                    customerDeliveryAccepted={item.customerDeliveryAccepted}
+                    sellerDeliveryConfirmed={item.sellerDeliveryConfirmed}
+                  />
+                </View>
+
+                <View style={styles.cardBottom}>
+                  <MaterialIcons
+                    name="inventory-2"
+                    size={18}
+                    color={colors.textMuted}
+                    accessible={false}
+                    importantForAccessibility="no"
+                  />
+                  <Text
+                    style={[styles.itemsText, { color: colors.textSecondary }]}>
+                    {item.itemCount} item{item.itemCount === 1 ? '' : 's'}
                   </Text>
-                  <Text style={[styles.meta, { color: colors.textSecondary }]}>
-                    #{item.$id.slice(-6).toUpperCase()} ·{' '}
-                    {formatShortDate(item.$createdAt)}
-                  </Text>
-                  <Text style={[styles.meta, { color: colors.textSecondary }]}>
-                    {item.itemCount} item{item.itemCount === 1 ? '' : 's'} ·{' '}
+                  <Text style={[styles.amount, { color: colors.text }]}>
                     {formatPrice(item.totalAmount)}
                   </Text>
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={22}
+                    color={colors.textMuted}
+                    accessible={false}
+                    importantForAccessibility="no"
+                  />
                 </View>
-                <OrderStatusPill
-                  status={item.status}
-                  customerDeliveryAccepted={item.customerDeliveryAccepted}
-                  sellerDeliveryConfirmed={item.sellerDeliveryConfirmed}
-                />
-                <MaterialIcons
-                  name="chevron-right"
-                  size={22}
-                  color={colors.textSecondary}
-                  accessible={false}
-                  importantForAccessibility="no"
-                />
               </Pressable>
             )}
           />
@@ -208,34 +193,28 @@ export default OrderHistoryScreen;
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  // A horizontal ScrollView has flexGrow: 1 by default, so inside this column it
-  // grew to fill half the screen and pushed the list down. Keep it its own height.
-  filterScroll: { flexGrow: 0, flexShrink: 0 },
-  filterRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingBottom: spacing.lg,
-    alignItems: 'center',
-  },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  filterChipText: { fontSize: 13, fontWeight: '700' },
   list: { paddingBottom: spacing.xxl, gap: spacing.md },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
     borderWidth: 1,
     borderRadius: radius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
+    ...shadows.card,
+  },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     gap: spacing.sm,
   },
-  cardBody: { flex: 1, gap: 4 },
+  cardBody: { flex: 1, minWidth: 0, gap: 2 },
+  cardBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  itemsText: { flex: 1, fontSize: 14 },
+  amount: { fontSize: 17, fontWeight: '700' },
   sellerName: { fontSize: 16, fontWeight: '700' },
   meta: { fontSize: 13 },
 });

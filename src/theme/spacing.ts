@@ -5,12 +5,20 @@ export const spacing = {
   lg: 16,
   xl: 24,
   xxl: 32,
+  xxxl: 48,
 } as const;
 
 export const radius = {
   sm: 8,
-  md: 12,
-  lg: 16,
+  md: 14,
+  lg: 18,
   xl: 24,
   full: 999,
+} as const;
+
+/** Control sizes shared by buttons, inputs, search bars and chips. */
+export const sizes = {
+  controlHeight: 52,
+  controlHeightSmall: 40,
+  minTouchTarget: 44,
 } as const;

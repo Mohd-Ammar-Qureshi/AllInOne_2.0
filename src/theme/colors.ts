@@ -15,6 +15,26 @@ export type ThemeColors = {
   statusActive: string;
   statusDraft: string;
   statusOutOfStock: string;
+  /** Very light blue wash for tinted buttons, selected rows and hero areas. */
+  primaryTint: string;
+  /** Soft blue for icon circles and selected-state backgrounds. */
+  primaryLight: string;
+  /** Border for tinted/outlined controls. */
+  borderStrong: string;
+  /** Hairline between rows and around cards. */
+  divider: string;
+  /** Secondary ICONS and chevrons only (about 3.8:1). Text and placeholders use textSecondary. */
+  textMuted: string;
+  /** Pill search field background. */
+  searchBackground: string;
+  successSoft: string;
+  successText: string;
+  warningSoft: string;
+  warningText: string;
+  errorSoft: string;
+  errorText: string;
+  infoSoft: string;
+  infoText: string;
 };
 
 export const lightColors: ThemeColors = {
@@ -24,7 +44,7 @@ export const lightColors: ThemeColors = {
   surface: '#FFFFFF',
   surfaceSecondary: '#F1F5F9',
   text: '#0F172A',
-  textSecondary: '#64748B',
+  textSecondary: '#56667D',
   border: '#E2E8F0',
   error: '#DC2626',
   success: '#16A34A',
@@ -34,6 +54,20 @@ export const lightColors: ThemeColors = {
   statusActive: '#16A34A',
   statusDraft: '#64748B',
   statusOutOfStock: '#DC2626',
+  primaryTint: '#F0F6FF',
+  primaryLight: '#E3EEFF',
+  borderStrong: '#C9DBF7',
+  divider: '#EDF2F7',
+  textMuted: '#74859C',
+  searchBackground: '#F1F6FD',
+  successSoft: '#E4F6EE',
+  successText: '#0B7A4B',
+  warningSoft: '#FFF2DD',
+  warningText: '#975200',
+  errorSoft: '#FDECEC',
+  errorText: '#B3261E',
+  infoSoft: '#E7F0FD',
+  infoText: '#1D5FD1',
 };
 
 export const darkColors: ThemeColors = {
@@ -53,4 +87,18 @@ export const darkColors: ThemeColors = {
   statusActive: '#4ADE80',
   statusDraft: '#94A3B8',
   statusOutOfStock: '#F87171',
+  primaryTint: '#101C33',
+  primaryLight: '#172B52',
+  borderStrong: '#2B4A7E',
+  divider: '#1F2A3D',
+  textMuted: '#7B8BA3',
+  searchBackground: '#162033',
+  successSoft: '#0F2A1E',
+  successText: '#4ADE80',
+  warningSoft: '#33240A',
+  warningText: '#FBBF24',
+  errorSoft: '#341517',
+  errorText: '#F87171',
+  infoSoft: '#13233F',
+  infoText: '#93C5FD',
 };

@@ -44,7 +44,7 @@ const BottomNav = <K extends string>({
         styles.container,
         {
           backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          borderTopColor: colors.divider,
           paddingBottom: insets.bottom,
         },
       ]}>
@@ -69,7 +69,7 @@ const BottomNav = <K extends string>({
             <View
               style={[
                 styles.iconPill,
-                selected && { backgroundColor: `${colors.primary}22` },
+                selected && { backgroundColor: colors.primaryLight },
               ]}>
               <MaterialIcons name={item.icon} size={24} color={color} />
               {badge ? (

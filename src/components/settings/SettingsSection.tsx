@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type SettingsSectionProps = {
   title?: string;
@@ -23,7 +23,7 @@ const SettingsSection = ({ title, children }: SettingsSectionProps) => {
       <View
         style={[
           styles.card,
-          { backgroundColor: colors.surface, borderColor: colors.border },
+          { backgroundColor: colors.surface, borderColor: colors.divider },
         ]}>
         {items.map((child, index) => (
           <View key={index}>
@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.lg,
     overflow: 'hidden',
+    ...shadows.card,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

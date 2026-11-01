@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { useKeyboardBackHandler } from '../../hooks/useKeyboardBackHandler';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppwrite } from '../../appwrite/AppwriteContext';
+import AppLogo from '../../components/ui/AppLogo';
 import Button from '../../components/ui/Button';
+import PlusMark from '../../components/ui/PlusMark';
 import Input from '../../components/ui/Input';
 import RolePicker from '../../components/ui/RolePicker';
 import { useTheme } from '../../context/ThemeContext';
@@ -23,13 +25,15 @@ import {
   getErrorMessage,
   showSuccessSnackbar,
 } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { getReadableTextColor } from '../../utils/color';
+import { radius, spacing, useLayout } from '../../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
 
 const SignupScreen = ({ navigation }: Props) => {
   useKeyboardBackHandler();
   const { colors } = useTheme();
+  const { gutter, contentMaxWidth } = useLayout();
   const { register } = useAppwrite();
 
   const [name, setName] = useState('');
@@ -110,22 +114,24 @@ const SignupScreen = ({ navigation }: Props) => {
         style={styles.flex}
         behavior='padding'>
         <ScrollView
-          contentContainerStyle={styles.scrollContainer}
+          contentContainerStyle={[
+            styles.scrollContainer,
+            { paddingHorizontal: gutter },
+          ]}
           keyboardShouldPersistTaps="handled">
+          <PlusMark size={56} style={styles.plusRight} />
+          <View style={[styles.column, { maxWidth: contentMaxWidth }]}>
           <View style={styles.header}>
+            <AppLogo size={52} />
             <Text style={[styles.title, { color: colors.text }]}>
               Create Account
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Join AllInOne B2B medical marketplace
+              Join the AllInOne B2B medical marketplace
             </Text>
           </View>
 
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}>
+          <View>
             <RolePicker
               value={role}
               onChange={nextRole => {
@@ -137,6 +143,7 @@ const SignupScreen = ({ navigation }: Props) => {
 
             <Input
               label="Full Name / Business Name"
+              leftIcon="person-outline"
               placeholder="City Medical Store"
               value={name}
               onChangeText={text => {
@@ -147,6 +154,7 @@ const SignupScreen = ({ navigation }: Props) => {
 
             <Input
               label="Email"
+              leftIcon="mail-outline"
               placeholder="you@example.com"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -159,6 +167,7 @@ const SignupScreen = ({ navigation }: Props) => {
 
             <Input
               label="Phone"
+              leftIcon="phone"
               placeholder="9880008084"
               keyboardType="phone-pad"
               value={phone}
@@ -167,6 +176,7 @@ const SignupScreen = ({ navigation }: Props) => {
 
             <Input
               label="Address"
+              leftIcon="location-on"
               placeholder="123 main street"
               value={address}
               onChangeText={setAddress}
@@ -174,6 +184,7 @@ const SignupScreen = ({ navigation }: Props) => {
 
             <Input
               label="City"
+              leftIcon="location-city"
               placeholder="Mumbai"
               value={city}
               onChangeText={setCity}
@@ -181,6 +192,7 @@ const SignupScreen = ({ navigation }: Props) => {
 
             <Input
               label="State"
+              leftIcon="map"
               placeholder="Maharashtra"
               value={stateValue}
               onChangeText={setStateValue}
@@ -188,6 +200,7 @@ const SignupScreen = ({ navigation }: Props) => {
 
             <Input
               label="Pincode"
+              leftIcon="pin-drop"
               placeholder="400001"
               keyboardType="number-pad"
               value={pincode}
@@ -196,6 +209,7 @@ const SignupScreen = ({ navigation }: Props) => {
 
             <Input
               label="Password"
+              leftIcon="lock-outline"
               placeholder="Minimum 8 characters"
               secureTextEntry
               value={password}
@@ -207,6 +221,7 @@ const SignupScreen = ({ navigation }: Props) => {
 
             <Input
               label="Confirm Password"
+              leftIcon="lock-outline"
               placeholder="Repeat your password"
               secureTextEntry
               value={repeatPassword}
@@ -217,15 +232,27 @@ const SignupScreen = ({ navigation }: Props) => {
             />
 
             {error ? (
-              <Text style={[styles.error, { color: colors.error }]}>
-                {error}
-              </Text>
+              <View
+                accessibilityLiveRegion="polite"
+                style={[styles.errorBanner, { backgroundColor: colors.errorSoft }]}>
+                <MaterialIcons name="error-outline" size={20} color={colors.errorText} />
+                <Text style={[styles.errorText, { color: colors.errorText }]}>
+                  {error}
+                </Text>
+              </View>
             ) : null}
 
             <Button
               title="Create Account"
               onPress={handleSignup}
               loading={loading}
+              rightIcon={
+                <MaterialIcons
+                  name="arrow-forward"
+                  size={20}
+                  color={getReadableTextColor(colors.primary)}
+                />
+              }
             />
 
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -236,6 +263,7 @@ const SignupScreen = ({ navigation }: Props) => {
                 </Text>
               </Text>
             </TouchableOpacity>
+          </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -254,31 +282,33 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xl,
   },
+  column: { width: '100%', alignSelf: 'center' },
+  plusRight: { position: 'absolute', right: -14, top: 60 },
   header: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+    gap: spacing.xs,
   },
   title: {
-    fontSize: 30,
-    fontWeight: '800',
-    marginBottom: spacing.xs,
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: '700',
+    marginTop: spacing.md,
   },
   subtitle: {
     fontSize: 15,
+    lineHeight: 22,
   },
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.xl,
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
-  error: {
-    fontSize: 14,
-    marginBottom: spacing.md,
-    marginTop: -spacing.sm,
-  },
+  errorText: { flex: 1, fontSize: 14, lineHeight: 20, fontWeight: '600' },
   footerText: {
     textAlign: 'center',
     marginTop: spacing.lg,

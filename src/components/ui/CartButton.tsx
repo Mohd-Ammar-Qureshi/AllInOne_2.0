@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
+import { shadows } from '../../theme';
 import { getReadableTextColor } from '../../utils/color';
 
 type Props = { onPress: () => void };
@@ -22,7 +23,10 @@ const CartButton = ({ onPress }: Props) => {
       }
       hitSlop={4}
       onPress={onPress}
-      style={[styles.button, { backgroundColor: colors.surfaceSecondary }]}>
+      style={[
+        styles.button,
+        { backgroundColor: colors.surface, borderColor: colors.divider },
+      ]}>
       <MaterialIcons name="shopping-cart" size={22} color={colors.text} />
       {itemCount > 0 ? (
         <View style={[styles.badge, { backgroundColor: colors.error }]}>
@@ -43,8 +47,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.card,
   },
   badge: {
     position: 'absolute',

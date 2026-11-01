@@ -4,7 +4,7 @@ import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { OrderStatus } from '../../types/order';
 import { getReadableTextColor } from '../../utils/color';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 export type ProgressStepState = 'done' | 'current' | 'upcoming';
 
@@ -84,7 +84,7 @@ const OrderProgress = ({ status }: Props) => {
       }${current ? `, next: ${current.label}` : ', completed'}`}
       style={[
         styles.card,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        { backgroundColor: colors.surface, borderColor: colors.divider },
       ]}>
       <View style={styles.row}>
         {steps.map((step, index) => {
@@ -156,6 +156,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
+    ...shadows.card,
   },
   row: { flexDirection: 'row' },
   step: { flex: 1, alignItems: 'center' },

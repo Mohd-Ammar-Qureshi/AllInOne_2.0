@@ -27,11 +27,8 @@ const EmptyState = ({
   return (
     <View style={styles.container}>
       <View
-        style={[
-          styles.iconWrap,
-          { backgroundColor: colors.surfaceSecondary },
-        ]}>
-        <MaterialIcons name={icon} size={42} color={colors.textSecondary} />
+        style={[styles.iconWrap, { backgroundColor: colors.primaryLight }]}>
+        <MaterialIcons name={icon} size={42} color={colors.primary} />
       </View>
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       <Text style={[styles.description, { color: colors.textSecondary }]}>

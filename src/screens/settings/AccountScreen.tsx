@@ -11,7 +11,7 @@ import {
   ACCOUNT_TYPE_DESCRIPTIONS,
   ACCOUNT_TYPE_LABELS,
 } from '../../settings/settingsConfig';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 import { SettingsStackParamList } from '../../types/navigation';
 import { USER_ROLE_LABELS } from '../../types/user';
 
@@ -50,7 +50,7 @@ const AccountScreen = ({ navigation }: Props) => {
             <View
               style={[
                 styles.typeCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.surface, borderColor: colors.divider },
               ]}>
               <Text style={[styles.typeLabel, { color: colors.textSecondary }]}>
                 Account type
@@ -89,8 +89,7 @@ const AccountScreen = ({ navigation }: Props) => {
           </SettingsSection>
 
           <Text style={[styles.note, { color: colors.textSecondary }]}>
-            Your email is managed by your login account. To change it, contact
-            support.
+            To update your sign-in email, visit Security settings.
           </Text>
         </View>
       </ScrollView>
@@ -109,6 +108,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.xl,
+    ...shadows.card,
   },
   typeLabel: {
     fontSize: 13,

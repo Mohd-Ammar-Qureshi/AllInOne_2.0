@@ -20,7 +20,7 @@ import {
 import { AppNotification } from '../../types/notification';
 import { OrderStatus } from '../../types/order';
 import { getErrorMessage, showErrorSnackbar } from '../../utils/errorHandler';
-import { radius, spacing } from '../../theme';
+import { radius, spacing, shadows } from '../../theme';
 
 type Props = {
   navigation: {
@@ -351,6 +351,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.sm,
+    ...shadows.card,
   },
   unreadDot: {
     width: 8,
